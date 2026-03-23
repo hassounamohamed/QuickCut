@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "QuickCut",
+    "slug": "quickcut",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo.png",
+    "scheme": "trimtime",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundColor": "#F5F0E8"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.TrimTime",
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-6380691732214412~3738057964"
+      }
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F5F0E8",
+          "dark": {
+            "backgroundColor": "#1a1a1a"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "admobBannerAndroidIdDev": "ca-app-pub-3940256099942544/6300978111",
+      "admobBannerIosIdDev": "ca-app-pub-3940256099942544/2934735716",
+      "admobBannerAndroidIdProd": "ca-app-pub-6380691732214412/1710828293",
+      "admobBannerIosIdProd": ""
+    }
+  }
+}

@@ -1,0 +1,3 @@
+from app.repositories.user_repository import UserRepository
+from app.repositories.barber_repository import BarberRepository
+from app.repositories.barber_availability_repository import BarberAvailabilityRepository

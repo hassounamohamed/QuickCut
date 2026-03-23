@@ -1,0 +1,13 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit",
+    "source.sortMembers": "explicit"
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["app.json"],
+      "schema": {}
+    }
+  ]
+}
