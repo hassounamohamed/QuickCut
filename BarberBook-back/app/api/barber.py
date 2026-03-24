@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, Response, status
+from pathlib import Path
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_role
@@ -17,6 +20,8 @@ from app.schemas.booking import BarberQrResponse
 from app.services.barber_service import BarberService
 
 router = APIRouter(prefix="/barbers", tags=["Barbers"])
+UPLOADS_DIR = Path(__file__).resolve().parents[1] / "static" / "uploads"
+MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024
 
 
 @router.post("", response_model=BarberResponse, status_code=status.HTTP_201_CREATED)
@@ -52,6 +57,42 @@ async def add_my_barber_photo(
 ):
     service = BarberService(BarberRepository(db))
     return await service.add_photo_for_user(current_user.id, payload.photo_url)
+
+
+@router.post("/me/photos/upload", response_model=BarberPhotoResponse, status_code=status.HTTP_201_CREATED)
+async def upload_my_barber_photo(
+    request: Request,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("barber")),
+):
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only image files are allowed",
+        )
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty",
+        )
+
+    if len(content) > MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Image is too large. Max size is 5MB",
+        )
+
+    suffix = Path(file.filename or "").suffix or ".jpg"
+    filename = f"{uuid4().hex}{suffix}"
+    file_path = UPLOADS_DIR / filename
+    file_path.write_bytes(content)
+
+    photo_url = f"{str(request.base_url).rstrip('/')}/uploads/{filename}"
+    service = BarberService(BarberRepository(db))
+    return await service.add_photo_for_user(current_user.id, photo_url)
 
 
 @router.get("/me/photos", response_model=list[BarberPhotoResponse])

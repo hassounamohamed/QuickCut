@@ -41,3 +41,13 @@ class UserRepository:
         await self.db.commit()
         await self.db.refresh(user)
         return user
+
+    async def update_user(self, user: User, *, email: str | None = None, username: str | None = None) -> User:
+        if email is not None:
+            user.email = email
+        if username is not None:
+            user.username = username
+
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user

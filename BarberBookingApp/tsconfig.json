@@ -9,9 +9,27 @@
     }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "constants/**/*.ts",
+    "constants/**/*.tsx",
+    "context/**/*.ts",
+    "context/**/*.tsx",
+    "hooks/**/*.ts",
+    "hooks/**/*.tsx",
+    "services/**/*.ts",
+    "services/**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "android",
+    "ios",
+    ".expo",
+    "dist",
+    "build"
   ]
 }

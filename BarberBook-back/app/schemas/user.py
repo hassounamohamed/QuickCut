@@ -20,6 +20,11 @@ class UserResponse(BaseModel):
     role: Literal["user", "barber"]
 
 
+class UserUpdate(BaseModel):
+    email: str | None = Field(default=None, min_length=5, max_length=255)
+    username: str | None = Field(default=None, min_length=3, max_length=50)
+
+
 class LoginRequest(BaseModel):
     identifier: str = Field(..., min_length=3)
     password: str = Field(..., min_length=6)

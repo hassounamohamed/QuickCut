@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from app.db.session import engine
 from app.db.base import Base
@@ -13,6 +16,10 @@ from app.api.notification import router as notification_router
 import app.models  # noqa: F401 – registers all models with Base
 
 
+UPLOADS_DIR = Path(__file__).resolve().parent / "static" / "uploads"
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
@@ -21,6 +28,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="BarberBook API", version="1.0.0", lifespan=lifespan)
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,

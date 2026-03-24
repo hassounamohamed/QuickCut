@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 
 from app.core.security import create_access_token, hash_password, verify_password
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import LoginRequest, Token, UserCreate
+from app.schemas.user import LoginRequest, Token, UserCreate, UserUpdate
 
 
 class AuthService:
@@ -68,3 +68,29 @@ class AuthService:
         )
 
         return Token(access_token=token)
+
+    async def update_profile(self, current_user, payload: UserUpdate):
+        next_email = payload.email.strip() if payload.email is not None else None
+        next_username = payload.username.strip() if payload.username is not None else None
+
+        if next_email is not None and next_email != current_user.email:
+            existing_by_email = await self.user_repository.get_by_email(next_email)
+            if existing_by_email and existing_by_email.id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email is already in use",
+                )
+
+        if next_username is not None and next_username != current_user.username:
+            existing_by_username = await self.user_repository.get_by_username(next_username)
+            if existing_by_username and existing_by_username.id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username is already in use",
+                )
+
+        return await self.user_repository.update_user(
+            current_user,
+            email=next_email,
+            username=next_username,
+        )

@@ -2,6 +2,8 @@ import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
+import { clientApi } from '@/services/client.api';
+
 const SETTINGS_FILE = `${FileSystem.documentDirectory ?? ''}quickcut.settings.v1.json`;
 const isExpoGo = (Constants as any)?.appOwnership === 'expo';
 
@@ -36,6 +38,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [notificationsEnabled, setNotificationsEnabledState] = useState(false);
   const [permissionFlowSeen, setPermissionFlowSeenState] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [pushToken, setPushToken] = useState<string | null>(null);
 
   const persist = useCallback(async (next: StoredSettings) => {
     try {
@@ -94,16 +97,33 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           if (!permission.granted) {
             return false;
           }
+
+          const projectId =
+            (Constants as any)?.expoConfig?.extra?.eas?.projectId ||
+            (Constants as any)?.easConfig?.projectId;
+          const tokenResponse = await Notifications.getExpoPushTokenAsync(
+            projectId ? { projectId } : undefined,
+          );
+
+          if (!tokenResponse?.data) {
+            return false;
+          }
+
+          await clientApi.registerDeviceToken(tokenResponse.data);
+          setPushToken(tokenResponse.data);
         } catch {
           return false;
         }
+      } else if (pushToken) {
+        await clientApi.deregisterDeviceToken(pushToken).catch(() => undefined);
+        setPushToken(null);
       }
 
       setNotificationsEnabledState(value);
       await persist({ darkMode, notificationsEnabled: value, permissionFlowSeen });
       return true;
     },
-    [darkMode, permissionFlowSeen, persist],
+    [darkMode, permissionFlowSeen, persist, pushToken],
   );
 
   const setPermissionFlowSeen = useCallback(

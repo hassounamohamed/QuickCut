@@ -130,6 +130,17 @@ export const barberApi = {
   addPhoto: (photo_url: string) =>
     api.post('/barbers/me/photos', { photo_url }).then((r) => r.data),
 
+  addPhotoFile: (payload: { uri: string; mimeType?: string | null; name?: string | null }) => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: payload.uri,
+      type: payload.mimeType ?? 'image/jpeg',
+      name: payload.name ?? 'photo.jpg',
+    } as any);
+
+    return api.post('/barbers/me/photos/upload', formData).then((r) => r.data);
+  },
+
   deletePhoto: (photoId: number) =>
     api.delete(`/barbers/me/photos/${photoId}`).then((r) => r.data),
 

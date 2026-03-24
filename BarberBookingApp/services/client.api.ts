@@ -13,7 +13,13 @@ export interface FavoriteBarber {
   id: number;
   barber_id: number;
   client_id: number;
-  barber: BarberCard;
+  barber?: BarberCard | null;
+}
+
+export interface FavoriteSlotGroup {
+  barber_id: number;
+  shop_name: string;
+  slots: TimeSlot[];
 }
 
 export interface TimeSlot {
@@ -32,10 +38,18 @@ export interface Booking {
 }
 
 export interface ReviewPayload {
-  barber_id: number;
   reservation_id: number;
   rating: number;
   comment?: string;
+}
+
+export interface NotificationItem {
+  id: number;
+  user_id: number;
+  title: string;
+  body: string;
+  is_read: boolean;
+  created_at: string;
 }
 
 export const clientApi = {
@@ -46,7 +60,11 @@ export const clientApi = {
 
   listFavorites: async () => {
     const { data } = await api.get<FavoriteBarber[]>('/favorites/me');
-    return data;
+    if (!Array.isArray(data)) return [];
+    return data.map((item) => ({
+      ...item,
+      barber: item?.barber ?? null,
+    }));
   },
 
   favoriteBarber: async (barberId: number) => {
@@ -60,10 +78,12 @@ export const clientApi = {
   },
 
   listFavoriteSlots: async () => {
-    const { data } = await api.get<
-      { barber_id: number; shop_name: string; slots: TimeSlot[] }[]
-    >('/favorites/me/slots');
-    return data;
+    const { data } = await api.get<FavoriteSlotGroup[]>('/favorites/me/slots');
+    if (!Array.isArray(data)) return [];
+    return data.map((item) => ({
+      ...item,
+      slots: Array.isArray(item?.slots) ? item.slots : [],
+    }));
   },
 
   createBooking: async (payload: {
@@ -87,6 +107,30 @@ export const clientApi = {
 
   addReview: async (payload: ReviewPayload) => {
     const { data } = await api.post('/reviews', payload);
+    return data;
+  },
+
+  listNotifications: async () => {
+    const { data } = await api.get<NotificationItem[]>('/notifications/me');
+    return Array.isArray(data) ? data : [];
+  },
+
+  registerDeviceToken: async (token: string) => {
+    const { data } = await api.post('/notifications/device-token', { token });
+    return data;
+  },
+
+  deregisterDeviceToken: async (token: string) => {
+    const { data } = await api.request({
+      method: 'DELETE',
+      url: '/notifications/device-token',
+      data: { token },
+    });
+    return data;
+  },
+
+  markNotificationRead: async (notificationId: number) => {
+    const { data } = await api.patch<NotificationItem>(`/notifications/${notificationId}/read`);
     return data;
   },
 

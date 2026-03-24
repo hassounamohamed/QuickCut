@@ -112,26 +112,31 @@ export default function BarberProfileScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         quality: 0.7,
-        base64: true,
       });
 
       if (result.canceled || !result.assets?.length) return;
 
       const asset = result.assets[0];
-      if (!asset.base64) {
+      if (!asset.uri) {
         Alert.alert('Error', 'Could not read selected image');
         return;
       }
 
       const mimeType = asset.mimeType ?? 'image/jpeg';
-      const dataUrl = `data:${mimeType};base64,${asset.base64}`;
-      await barberApi.addPhoto(dataUrl);
+      const extension = mimeType.split('/')[1] || 'jpg';
+      await barberApi.addPhotoFile({
+        uri: asset.uri,
+        mimeType,
+        name: asset.fileName ?? `portfolio-${Date.now()}.${extension}`,
+      });
       await loadProfile();
-    } catch {
-      Alert.alert('Error', 'Could not add photo');
+    } catch (error: any) {
+      const detail = error?.response?.data?.detail;
+      const message = typeof detail === 'string' ? detail : 'Could not add photo';
+      Alert.alert('Error', message);
     } finally {
       setAddingPhoto(false);
     }

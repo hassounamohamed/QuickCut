@@ -30,6 +30,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (token: string) => void;
   logout: () => void;
+  syncProfile: (payload: Partial<Pick<AuthUser, 'email' | 'username'>>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -39,6 +40,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   login: () => {},
   logout: () => {},
+  syncProfile: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -63,6 +65,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthToken(null);
   }, []);
 
+  const syncProfile = useCallback((payload: Partial<Pick<AuthUser, 'email' | 'username'>>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        email: payload.email ?? prev.email,
+        username: payload.username ?? prev.username,
+      };
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -72,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: Boolean(token),
         login,
         logout,
+        syncProfile,
       }}
     >
       {children}
