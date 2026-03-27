@@ -6,6 +6,7 @@
 
 ```bash
 cd BarberBook-back
+pip install -r requirements.txt
 pip install pytest pytest-asyncio aiosqlite
 ```
 
@@ -13,7 +14,7 @@ pip install pytest pytest-asyncio aiosqlite
 
 ```bash
 # Run all tests
-pytest
+pytest -q
 
 # Run with verbose output
 pytest -v
@@ -35,6 +36,7 @@ Tests are organized by feature:
 - `tests/test_auth.py` — Authentication tests
 - `tests/test_bookings.py` — Booking/reservation tests
 - `tests/test_favorites.py` — Favorites tests
+- `tests/test_metrics.py` — Health/metrics behavior tests
 
 ### Test Database
 
@@ -49,13 +51,13 @@ Tests use SQLite in-memory database (`:memory:`), so:
 def test_register_client_success(self, client):
     """Test successful client registration."""
     response = client.post(
-        "/register",
+    "/auth/register",
         json={
             "email": "newclient@example.com",
             "username": "newclient",
             "password": "securepass123",
-            "password_confirm": "securepass123",
-            "role": "client",
+      "confirme_password": "securepass123",
+      "role": "user",
         },
     )
     assert response.status_code == 201
@@ -97,7 +99,7 @@ npm test
 
 ### Test Examples
 
-See `__tests__/hooks/useAuth.test.example.ts` for examples.
+No frontend test files are committed yet. Add Jest/React Native tests under `BarberBookingApp/__tests__/` when starting mobile automation.
 
 ## CI/CD Integration
 
@@ -124,6 +126,7 @@ Add to your CI pipeline (GitHub Actions, GitLab CI, etc.):
 - **Auth endpoints:** 90%+ coverage
 - **Booking logic:** 85%+ coverage
 - **Favorite operations:** 85%+ coverage
+- **Health/Metrics logic:** 80%+ coverage
 - **Overall:** 70%+ coverage
 
 ## Testing Best Practices

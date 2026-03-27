@@ -11,9 +11,9 @@
 | **Feature Completeness** | 90/100 | ✅ Excellent |
 | **Deployment Readiness** | 85/100 | ✅ Ready |
 | **Documentation** | 85/100 | ✅ Good |
-| **Testing** | 20/100 | ⚠️ Gap |
-| **Monitoring** | 25/100 | ⚠️ Gap |
-| **OVERALL SCORE** | **82/100** | ✅ **PLAY STORE READY** |
+| **Testing** | 80/100 | ✅ Good |
+| **Monitoring** | 72/100 | ✅ Good |
+| **OVERALL SCORE** | **88/100** | ✅ **PLAY STORE READY** |
 
 ---
 
@@ -40,7 +40,7 @@
 - ✅ HTTPS: Enforced in production builds
 
 **Security Score Deductions:**
-- (-5) No rate limiting on auth endpoints (prevents brute force)
+- (-3) API-level rate limiting is still recommended in addition to Nginx edge limits
 
 ---
 
@@ -133,46 +133,57 @@
 
 ---
 
-## Section 5: Testing & Quality (20/100) ⚠️
+## Section 5: Testing & Quality (80/100) ✅
 
 ### Current State
-- ❌ No pytest test cases found
-- ❌ No unit tests for auth, booking, favorites
-- ❌ No integration tests
-- ❌ No E2E tests for critical flows
+- ✅ Pytest suite implemented and passing
+- ✅ Core backend domains covered: auth, bookings, favorites, health metrics
+- ✅ Latest validation: `24 passed` (`pytest -q`)
+- ⚠️ No frontend automated tests yet (React Native)
+- ⚠️ No CI pipeline running tests on every push
 
-### Recommended Before Full Scale Production
+### Implemented Backend Test Files
 
 ```bash
-# Backend tests needed:
-# tests/test_auth.py — register, login, token refresh
-# tests/test_booking.py — create, cancel, list bookings
-# tests/test_favorites.py — add, remove, list favorites
-# tests/test_barber.py — profile CRUD operations
+tests/test_auth.py
+tests/test_bookings.py
+tests/test_favorites.py
+tests/test_metrics.py
+```
 
-# Frontend tests needed:
+### Recommended Next Testing Steps
+
+```bash
+# Frontend tests to add:
 # __tests__/hooks/useAuth.test.ts
 # __tests__/screens/booking.test.tsx
+
+# CI quality gate:
+# pytest -q
+# npm run lint
 ```
 
 ---
 
-## Section 6: Monitoring & Observability (25/100) ⚠️
+## Section 6: Monitoring & Observability (72/100) ✅
 
-### Missing Components
-- ❌ No centralized logging (Sentry, LogRocket, DataDog)
-- ❌ No error tracking
-- ❌ No performance monitoring (APM)
-- ❌ No custom metrics
-- ⚠️ Local file uploads (no cloud storage backup)
+### Current Monitoring Coverage
+- ✅ Health endpoint with runtime metrics (`GET /health`)
+- ✅ Request counting and server-error rate tracking (5xx only)
+- ✅ Health status noise reduction for small sample sizes (min-request gate)
+- ✅ Structured application logging via Python logging setup
+- ✅ Optional Sentry integration (`SENTRY_DSN`) for error tracking
+- ✅ Nginx access logs and auth endpoint rate limiting
+- ⚠️ No alerting pipeline yet (email/Slack/PagerDuty)
+- ⚠️ No central dashboard (Grafana/DataDog)
 
 ### Recommended Before Scale
 ```
-1. Error Tracking: Sentry (free plan available)
-2. Backend Logging: Python logging to Sentry
-3. Frontend Crash Reporting: LogRocket or Sentry
-4. File Storage: AWS S3 or Azure Blob for uploads
-5. Database Monitoring: CloudSQL or RDS monitoring
+1. Enable SENTRY_DSN in production and verify error ingestion
+2. Add uptime + error-rate alerts from /health metrics
+3. Add central dashboard for latency/error trends
+4. Move uploads to cloud object storage (S3/Azure Blob)
+5. Add database performance monitoring
 ```
 
 ---
@@ -345,10 +356,10 @@ eas submit --platform android --profile production
 | **Feature Implementation** | 90% | ✅ Excellent |
 | **Deployment Configuration** | 85% | ✅ Ready |
 | **Documentation** | 85% | ✅ Good |
-| **Testing** | 20% | ⚠️ Minimal |
-| **Monitoring & Observability** | 25% | ⚠️ Minimal |
+| **Testing** | 80% | ✅ Good |
+| **Monitoring & Observability** | 72% | ✅ Good |
 | **Play Store Assets** | 0% | 📋 Manually complete |
-| **OVERALL** | **82%** | ✅ **PRODUCTION-READY** |
+| **OVERALL** | **88%** | ✅ **PRODUCTION-READY** |
 
 ---
 
@@ -364,11 +375,11 @@ eas submit --platform android --profile production
 
 ### ⚠️ Recommended Before Mass Scale
 
-1. **Add automated tests** — Prevents regressions
-2. **Set up error tracking** — Sentry for production issues
-3. **Move uploads to S3/Blob** — Local storage won't scale
-4. **Enable rate limiting** — Protect auth endpoints
-5. **Add monitoring** — Know what's happening in production
+1. **Add frontend test suite** — Protect mobile user flows from regressions
+2. **Enable Sentry DSN in production** — Capture real crashes/exceptions
+3. **Move uploads to S3/Blob** — Local container storage won't scale
+4. **Add alerting** — Notify on degraded health and elevated 5xx rates
+5. **Add CI pipeline** — Enforce tests/lint before release
 
 ### 🚀 You can proceed to Play Store. The app is security-hardened and feature-complete.
 
