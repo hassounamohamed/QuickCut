@@ -40,8 +40,7 @@ class BarberRepository:
         )
         self.db.add(barber)
         await self.db.commit()
-        await self.db.refresh(barber)
-        return barber
+        return await self.get_by_id(barber.id)
 
     async def get_by_id(self, barber_id: int) -> Barber | None:
         result = await self.db.execute(
@@ -55,8 +54,12 @@ class BarberRepository:
         for key, value in data.items():
             setattr(barber, key, value)
         await self.db.commit()
-        await self.db.refresh(barber)
-        return barber
+        return await self.get_by_id(barber.id)
+
+    async def update_rating(self, barber: Barber, rating: float) -> Barber:
+        barber.rating = rating
+        await self.db.commit()
+        return await self.get_by_id(barber.id)
 
     async def add_photo(self, barber_id: int, photo_url: str) -> BarberPhoto:
         photo = BarberPhoto(barber_id=barber_id, photo_url=photo_url)

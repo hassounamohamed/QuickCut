@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
+  Alert,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -40,6 +41,11 @@ function formatDate(iso: string) {
   });
 }
 
+function initialFromName(name?: string | null): string {
+  const clean = name?.trim();
+  return clean?.[0]?.toUpperCase() || 'C';
+}
+
 export default function ReviewsScreen() {
   const { colors } = useAppColors();
   const GOLD = colors.primary;
@@ -53,8 +59,11 @@ export default function ReviewsScreen() {
     try {
       const data = await barberApi.getReviews();
       setReviews(data);
-    } catch {
-      // pass
+    } catch (error: any) {
+      const detail = error?.response?.data?.detail;
+      const message = typeof detail === 'string' ? detail : 'Could not load reviews.';
+      Alert.alert('Reviews Error', message);
+      setReviews([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -135,23 +144,28 @@ export default function ReviewsScreen() {
             <Text style={styles.emptySub}>Client feedback will appear here</Text>
           </View>
         ) : (
-          reviews.map((review) => (
-            <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.surface }]}> 
-              <View style={styles.reviewHeader}>
-                <View style={styles.reviewAvatar}>
-                  <Text style={styles.reviewAvatarText}>C</Text>
+          reviews.map((review) => {
+            const clientName = review.client_name?.trim() || 'Client';
+            return (
+              <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.surface }]}> 
+                <View style={styles.reviewHeader}>
+                  <View style={styles.reviewAvatar}>
+                    <Text style={styles.reviewAvatarText}>{initialFromName(clientName)}</Text>
+                  </View>
+                  <View style={styles.reviewMeta}>
+                    <Text style={[styles.reviewAuthor, { color: DARK }]}>
+                      {clientName}
+                    </Text>
+                    <Text style={[styles.reviewDate, { color: colors.textMuted }]}>{formatDate(review.created_at)}</Text>
+                  </View>
+                  <StarRow rating={review.rating} />
                 </View>
-                <View style={styles.reviewMeta}>
-                  <Text style={[styles.reviewAuthor, { color: DARK }]}>Client #{review.client_id}</Text>
-                  <Text style={[styles.reviewDate, { color: colors.textMuted }]}>{formatDate(review.created_at)}</Text>
-                </View>
-                <StarRow rating={review.rating} />
+                {review.comment ? (
+                  <Text style={[styles.reviewComment, { color: colors.textMuted }]}>{review.comment}</Text>
+                ) : null}
               </View>
-              {review.comment ? (
-                <Text style={[styles.reviewComment, { color: colors.textMuted }]}>{review.comment}</Text>
-              ) : null}
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>

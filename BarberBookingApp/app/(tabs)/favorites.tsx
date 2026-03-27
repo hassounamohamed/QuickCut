@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -72,23 +71,7 @@ export default function FavoritesScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={[styles.avatar, { backgroundColor: colors.primaryMuted, borderColor: colors.primary }]}> 
-              <Text style={[styles.avatarText, { color: colors.primary }]}>F</Text>
-            </View>
-            <View>
-              <Text style={[styles.greeting, { color: colors.text }]}>Hello 👋</Text>
-              <Text style={[styles.roleLabel, { color: colors.textMuted }]}>Your saved barbers</Text>
-            </View>
-          </View>
-          <Pressable
-            style={[styles.iconBtn, { backgroundColor: colors.surface, borderColor: colors.divider }]}
-            onPress={() => router.push('/(tabs)/notifications')}
-          >
-            <Ionicons name="notifications-outline" size={20} color={colors.text} />
-          </Pressable>
-        </View>
+       
 
         <Text style={[styles.pageTitle, { color: colors.text }]}>Favorites</Text>
 
@@ -127,13 +110,13 @@ export default function FavoritesScreen() {
                   style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.divider }]}
                 >
                   <Text style={[styles.name, { color: colors.text }]}>
-                    {barber?.shop_name || `Barber #${item.barber_id}`}
+                    {barber?.shop_name?.trim() || 'Unnamed Barber'}
                   </Text>
                   <Text style={[styles.meta, { color: colors.textMuted }]}>
                     {barber?.address || 'No address'}
                   </Text>
                   <Text style={[styles.meta, { color: colors.textMuted }]}>
-                    Rating {barber?.rating != null ? Number(barber.rating).toFixed(1) : '-'}
+                    Rating {Number(barber?.rating ?? 0).toFixed(1)}
                   </Text>
 
                   <View style={styles.actions}>

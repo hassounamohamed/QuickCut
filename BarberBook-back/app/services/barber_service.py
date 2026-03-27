@@ -40,9 +40,12 @@ class BarberService:
     async def update_profile_for_user(self, user_id: int, payload: dict):
         barber = await self.repository.get_by_user_id(user_id)
         if not barber:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Barber profile not found for this user",
+            return await self.repository.create(
+                user_id=user_id,
+                shop_name=payload.get("shop_name") if payload else None,
+                address=payload.get("address") if payload else None,
+                latitude=payload.get("latitude") if payload else None,
+                longitude=payload.get("longitude") if payload else None,
             )
 
         if not payload:

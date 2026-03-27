@@ -47,6 +47,11 @@ const QUICK_ACTIONS = [
   { icon: 'star-outline', label: 'View Reviews', route: '/(barber)/reviews' },
 ] as const;
 
+function initialFromName(name?: string | null): string {
+  const clean = name?.trim();
+  return clean?.[0]?.toUpperCase() || 'C';
+}
+
 export default function BarberDashboard() {
   const router = useRouter();
   const { user } = useAuthContext();
@@ -207,7 +212,10 @@ export default function BarberDashboard() {
             </View>
           </View>
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.surface }]}> 
+            <TouchableOpacity
+              style={[styles.iconBtn, { backgroundColor: colors.surface }]}
+              onPress={() => router.push('/(barber)/notifications')}
+            > 
               <Ionicons name="notifications-outline" size={22} color={colors.text} />
             </TouchableOpacity>
             <TouchableOpacity
@@ -245,14 +253,14 @@ export default function BarberDashboard() {
             <View style={styles.queueCol}>
               <Text style={styles.queueSubLabel}>Now Serving</Text>
               <Text style={styles.queueName}>
-                {nowServing ? `Client #${nowServing.client_id}` : '—'}
+                {nowServing ? nowServing.client_name?.trim() || `Client ${nowServing.client_id}` : '—'}
               </Text>
             </View>
             <View style={styles.queueVertDivider} />
             <View style={styles.queueCol}>
               <Text style={styles.queueSubLabel}>Next Client</Text>
               <Text style={styles.queueName}>
-                {nextClient ? `Client #${nextClient.client_id}` : '—'}
+                {nextClient ? nextClient.client_name?.trim() || `Client ${nextClient.client_id}` : '—'}
               </Text>
             </View>
           </View>
@@ -286,13 +294,14 @@ export default function BarberDashboard() {
           ) : (
             dashboard.schedule.slice(0, 4).map((item) => {
               const badge = badgeStyle(item.status);
+              const clientName = item.client_name?.trim() || `Client ${item.client_id}`;
               return (
                 <View key={item.reservation_id} style={[styles.apptCard, { backgroundColor: colors.surface }]}>
                   <View style={styles.apptAvatar}>
-                    <Text style={styles.apptAvatarText}>C</Text>
+                    <Text style={styles.apptAvatarText}>{initialFromName(clientName)}</Text>
                   </View>
                   <View style={styles.apptInfo}>
-                    <Text style={[styles.apptName, { color: colors.text }]}>Client #{item.client_id}</Text>
+                    <Text style={[styles.apptName, { color: colors.text }]}>{clientName}</Text>
                     <View style={styles.apptMeta}>
                       <Ionicons name="time-outline" size={12} color="#8E8E93" />
                       <Text style={[styles.apptTime, { color: colors.textMuted }]}> {item.booking_time.slice(0, 5)}</Text>

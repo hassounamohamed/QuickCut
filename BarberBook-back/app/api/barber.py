@@ -66,6 +66,8 @@ async def upload_my_barber_photo(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("barber")),
 ):
+    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -16,12 +16,38 @@ class NotificationService:
         self.notification_repository = notification_repository
         self.device_token_repository = device_token_repository
 
+    async def notify_users(self, user_ids: list[int], title: str, body: str) -> None:
+        unique_ids = list({int(user_id) for user_id in user_ids if user_id})
+        if not unique_ids:
+            return
+
+        tasks = [self.notification_repository.create_bulk(unique_ids, title, body)]
+        if self.device_token_repository:
+            tasks.append(self._send_push_to_users(unique_ids, title, body))
+        await asyncio.gather(*tasks)
+
     async def notify_followers_new_slot(
-        self, user_ids: list[int], barber_id: int, day_of_week: int, start_time, end_time
+        self,
+        user_ids: list[int],
+        barber_name: str,
+        day_of_week: int,
+        start_time,
+        end_time,
     ):
+        day_names = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+        day_label = day_names[day_of_week] if 0 <= day_of_week < len(day_names) else str(day_of_week)
+
         title = "New slot available"
         body = (
-            f"Barber #{barber_id} added a new slot on day {day_of_week} "
+            f"Barber {barber_name} added a new slot on {day_label} "
             f"from {start_time.strftime('%H:%M')} to {end_time.strftime('%H:%M')}"
         )
         # Persist in-app notifications and fire push concurrently

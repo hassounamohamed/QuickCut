@@ -37,6 +37,7 @@ class ReservationStatusUpdate(BaseModel):
 class DailyScheduleItem(BaseModel):
     reservation_id: int
     client_id: int
+    client_name: str | None = None
     booking_time: time
     status: str
 
@@ -54,6 +55,7 @@ class BarberDashboardResponse(BaseModel):
 class QueueEntryResponse(BaseModel):
     reservation_id: int
     client_id: int
+    client_name: str | None = None
     booking_time: time
     status: str
 
@@ -63,6 +65,12 @@ class LiveQueueResponse(BaseModel):
     date: date
     waiting_count: int
     queue: list[QueueEntryResponse]
+
+
+class OccupiedTimesResponse(BaseModel):
+    barber_id: int
+    date: date
+    occupied_times: list[str]
 
 
 class BarberQrResponse(BaseModel):

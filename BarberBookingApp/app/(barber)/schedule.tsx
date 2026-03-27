@@ -40,6 +40,7 @@ export default function ScheduleScreen() {
   const [selectedDay, setSelectedDay] = useState(0);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('18:00');
+  const [slotMinutes, setSlotMinutes] = useState('30');
   const [adding, setAdding] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -93,6 +94,11 @@ export default function ScheduleScreen() {
       Alert.alert('Invalid range', 'Start time must be before end time');
       return;
     }
+    const minutes = Number(slotMinutes);
+    if (!Number.isInteger(minutes) || minutes < 15 || minutes > 180) {
+      Alert.alert('Invalid interval', 'Slot interval must be between 15 and 180 minutes');
+      return;
+    }
     try {
       setAdding(true);
       await barberApi.addAvailability({
@@ -100,6 +106,7 @@ export default function ScheduleScreen() {
         day_of_week: selectedDay,
         start_time: startTime + ':00',
         end_time: endTime + ':00',
+        slot_minutes: minutes,
       });
       await loadData();
     } catch (e: any) {
@@ -213,6 +220,19 @@ export default function ScheduleScreen() {
             </View>
           </View>
 
+          <View style={styles.intervalField}>
+            <Text style={[styles.timeLabel, { color: colors.textMuted }]}>Interval (minutes)</Text>
+            <TextInput
+              style={[styles.timeInput, { backgroundColor: colors.surface, borderColor: colors.divider, color: DARK }]}
+              value={slotMinutes}
+              onChangeText={setSlotMinutes}
+              placeholder="30"
+              placeholderTextColor="#CBD5E0"
+              keyboardType="number-pad"
+              maxLength={3}
+            />
+          </View>
+
           <TouchableOpacity
             style={[styles.addBtn, adding && styles.addBtnDisabled]}
             onPress={handleAdd}
@@ -247,7 +267,7 @@ export default function ScheduleScreen() {
                   >
                     <Ionicons name="time-outline" size={16} color={GOLD} />
                     <Text style={[styles.slotTime, { color: DARK }]}>
-                      {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
+                      {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)} ({slot.slot_minutes} min)
                     </Text>
                     <TouchableOpacity
                       onPress={() => handleDelete(slot.id)}
@@ -299,6 +319,7 @@ const styles = StyleSheet.create({
   dayChipTextActive: { color: '#FFFFFF' },
 
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  intervalField: { marginBottom: 16 },
   timeField: { flex: 1 },
   timeLabel: { fontSize: 12, color: '#8E8E93', fontWeight: '600', marginBottom: 6 },
   timeInput: {

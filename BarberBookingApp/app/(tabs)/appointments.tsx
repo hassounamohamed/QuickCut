@@ -15,17 +15,49 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ClientUi } from '@/constants/client-ui';
 import { useAppColors } from '@/hooks/use-app-colors';
-import type { Booking } from '@/services/client.api';
+import type { BarberCard, Booking } from '@/services/client.api';
 import { clientApi } from '@/services/client.api';
 
 type FilterType = 'all' | 'active' | 'done' | 'cancelled';
 
 const cancellableStatuses = new Set(['pending', 'accepted']);
 
+function statusLabel(status: string) {
+  if (status === 'pending') return 'Pending Confirmation';
+  if (status === 'accepted') return 'Confirmed';
+  if (status === 'completed') return 'Completed';
+  if (status === 'cancelled_by_client') return 'Cancelled by You';
+  if (status === 'cancelled_by_barber') return 'Cancelled by Barber';
+  return 'Updated';
+}
+
+function formatDateLabel(value: string) {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatTimeLabel(value: string) {
+  const match = value.match(/^(\d{2}):(\d{2})/);
+  if (!match) return value;
+  const date = new Date();
+  date.setHours(Number(match[1]), Number(match[2]), 0, 0);
+  return date.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function AppointmentsScreen() {
   const { colors } = useAppColors();
 
   const [items, setItems] = useState<Booking[]>([]);
+  const [barbersById, setBarbersById] = useState<Record<number, BarberCard>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
@@ -36,12 +68,23 @@ export default function AppointmentsScreen() {
   const [reviewLoading, setReviewLoading] = useState(false);
 
   const loadData = useCallback(async () => {
-    const result = await clientApi.myHistory();
+    const [result, barbers] = await Promise.all([
+      clientApi.myHistory(),
+      clientApi.listBarbers().catch(() => []),
+    ]);
+
     result.sort((a, b) => {
       const left = `${a.booking_date}T${a.booking_time}`;
       const right = `${b.booking_date}T${b.booking_time}`;
       return right.localeCompare(left);
     });
+
+    const map: Record<number, BarberCard> = {};
+    for (const barber of barbers) {
+      map[barber.id] = barber;
+    }
+
+    setBarbersById(map);
     setItems(result);
   }, []);
 
@@ -132,6 +175,7 @@ export default function AppointmentsScreen() {
         <View style={[styles.headerCard, { backgroundColor: colors.primaryMuted, borderColor: colors.divider }]}>
           <Text style={[styles.title, { color: colors.text }]}>My Appointments</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Track your pending, accepted, completed, and cancelled bookings.</Text>
+          <Text style={[styles.ratingHint, { color: colors.primary }]}>Rate barber is available after appointment status becomes COMPLETED.</Text>
         </View>
 
         <View style={styles.filters}>
@@ -168,6 +212,11 @@ export default function AppointmentsScreen() {
             {visibleItems.map((item) => {
               const canCancel = cancellableStatuses.has(item.status);
               const isCancelling = cancellingId === item.id;
+              const barberName =
+                barbersById[item.barber_id]?.shop_name ||
+                barbersById[item.barber_id]?.address ||
+                'Your Barber';
+              const friendlyStatus = statusLabel(item.status);
 
               return (
                 <View
@@ -175,14 +224,13 @@ export default function AppointmentsScreen() {
                   style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.divider }]}
                 >
                   <View style={styles.cardTop}>
-                    <Text style={[styles.cardTitle, { color: colors.text }]}>Reservation #{item.id}</Text>
+                    <Text style={[styles.cardTitle, { color: colors.text }]}>{barberName}</Text>
                     <View style={[styles.statusPill, { backgroundColor: `${statusColor(item.status)}22` }]}>
-                      <Text style={[styles.status, { color: statusColor(item.status) }]}>{item.status}</Text>
+                      <Text style={[styles.status, { color: statusColor(item.status) }]}>{friendlyStatus}</Text>
                     </View>
                   </View>
-                  <Text style={[styles.meta, { color: colors.textMuted }]}>Barber ID: {item.barber_id}</Text>
-                  <Text style={[styles.meta, { color: colors.textMuted }]}>Date: {item.booking_date}</Text>
-                  <Text style={[styles.meta, { color: colors.textMuted }]}>Time: {item.booking_time.slice(0, 5)}</Text>
+                  <Text style={[styles.meta, { color: colors.textMuted }]}>Date: {formatDateLabel(item.booking_date)}</Text>
+                  <Text style={[styles.meta, { color: colors.textMuted }]}>Time: {formatTimeLabel(item.booking_time)}</Text>
 
                   {canCancel ? (
                     <Pressable
@@ -277,6 +325,7 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 32, fontWeight: '800' },
   headerSubtitle: { fontSize: 13 },
+  ratingHint: { fontSize: 12, fontWeight: '700', marginTop: 2 },
   filters: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   filterChip: {
     borderWidth: 1,

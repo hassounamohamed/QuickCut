@@ -48,7 +48,7 @@ async def create_availability(
     )
     await notification_service.notify_followers_new_slot(
         user_ids=follower_ids,
-        barber_id=payload.barber_id,
+        barber_name=barber.shop_name or current_user.username,
         day_of_week=payload.day_of_week,
         start_time=payload.start_time,
         end_time=payload.end_time,
@@ -77,7 +77,24 @@ async def update_availability(
     availability_id: int,
     payload: BarberAvailabilityUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("barber")),
 ):
+    barber_repo = BarberRepository(db)
+    barber = await barber_repo.get_by_user_id(current_user.id)
+    if not barber:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Barber profile not found",
+        )
+
+    repo = BarberAvailabilityRepository(db)
+    availability = await repo.get_by_id(availability_id)
+    if not availability or availability.barber_id != barber.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only manage your own availability",
+        )
+
     service = BarberAvailabilityService(BarberAvailabilityRepository(db))
     return await service.update(availability_id, payload)
 
@@ -89,7 +106,24 @@ async def update_availability(
 async def delete_availability(
     availability_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("barber")),
 ):
+    barber_repo = BarberRepository(db)
+    barber = await barber_repo.get_by_user_id(current_user.id)
+    if not barber:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Barber profile not found",
+        )
+
+    repo = BarberAvailabilityRepository(db)
+    availability = await repo.get_by_id(availability_id)
+    if not availability or availability.barber_id != barber.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only manage your own availability",
+        )
+
     service = BarberAvailabilityService(BarberAvailabilityRepository(db))
     await service.delete(availability_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

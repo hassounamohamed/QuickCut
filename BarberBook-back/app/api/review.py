@@ -31,15 +31,6 @@ async def create_review(
     return await service.create_for_client(current_user.id, payload)
 
 
-@router.get("/barber/{barber_id}", response_model=list[ReviewResponse])
-async def list_feedback_for_barber(
-    barber_id: int,
-    db: AsyncSession = Depends(get_db),
-):
-    service = build_service(db)
-    return await service.list_feedback_for_barber(barber_id)
-
-
 @router.get("/barber/me", response_model=list[ReviewResponse])
 async def list_feedback_for_my_barber_profile(
     db: AsyncSession = Depends(get_db),
@@ -47,3 +38,12 @@ async def list_feedback_for_my_barber_profile(
 ):
     service = build_service(db)
     return await service.list_feedback_for_barber_user(current_user.id)
+
+
+@router.get("/barber/{barber_id}", response_model=list[ReviewResponse])
+async def list_feedback_for_barber(
+    barber_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    service = build_service(db)
+    return await service.list_feedback_for_barber(barber_id)

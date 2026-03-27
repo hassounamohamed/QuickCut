@@ -38,7 +38,8 @@
             "backgroundColor": "#1a1a1a"
           }
         }
-      ]
+      ],
+      "sentry-expo"
     ],
     "experiments": {
       "typedRoutes": true,

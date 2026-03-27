@@ -7,6 +7,7 @@ class BarberAvailabilityBase(BaseModel):
     day_of_week: int = Field(..., ge=0, le=6)
     start_time: time
     end_time: time
+    slot_minutes: int = Field(default=30, ge=15, le=180)
 
 
 class BarberAvailabilityCreate(BarberAvailabilityBase):
@@ -17,6 +18,7 @@ class BarberAvailabilityUpdate(BaseModel):
     day_of_week: int | None = Field(default=None, ge=0, le=6)
     start_time: time | None = None
     end_time: time | None = None
+    slot_minutes: int | None = Field(default=None, ge=15, le=180)
 
 
 class BarberAvailabilityResponse(BarberAvailabilityBase):

@@ -10,7 +10,10 @@ import { AuthProvider } from '@/context/AuthContext';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { NavigationDarkTheme, NavigationTheme } from '@/constants/theme';
 
-void ExpoSplashScreen.preventAutoHideAsync();
+void ExpoSplashScreen.preventAutoHideAsync().catch(() => {
+  // Expo Go/dev runtime can fail to activate keep-awake in some Android setups.
+  // We intentionally ignore this to avoid an uncaught startup promise rejection.
+});
 
 export const unstable_settings = {
   anchor: '(auth)',
@@ -20,7 +23,9 @@ export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const handleSplashFinish = useCallback(() => {
     setSplashDone(true);
-    void ExpoSplashScreen.hideAsync();
+    void ExpoSplashScreen.hideAsync().catch(() => {
+      // Ignore hide errors if splash screen state is already managed by runtime.
+    });
   }, []);
 
   if (!splashDone) {

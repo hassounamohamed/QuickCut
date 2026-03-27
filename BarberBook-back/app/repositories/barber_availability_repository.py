@@ -19,12 +19,14 @@ class BarberAvailabilityRepository:
         day_of_week: int,
         start_time,
         end_time,
+        slot_minutes: int,
     ) -> BarberAvailability:
         availability = BarberAvailability(
             barber_id=barber_id,
             day_of_week=day_of_week,
             start_time=start_time,
             end_time=end_time,
+            slot_minutes=slot_minutes,
         )
         self.db.add(availability)
         await self.db.commit()
@@ -42,6 +44,26 @@ class BarberAvailabilityRepository:
             select(BarberAvailability)
             .where(BarberAvailability.barber_id == barber_id)
             .order_by(BarberAvailability.day_of_week, BarberAvailability.start_time)
+        )
+        return list(result.scalars().all())
+
+    async def get_by_barber_and_day(self, barber_id: int, day_of_week: int) -> BarberAvailability | None:
+        result = await self.db.execute(
+            select(BarberAvailability).where(
+                BarberAvailability.barber_id == barber_id,
+                BarberAvailability.day_of_week == day_of_week,
+            )
+        )
+        return result.scalars().first()
+
+    async def list_by_barber_and_day(self, barber_id: int, day_of_week: int) -> list[BarberAvailability]:
+        result = await self.db.execute(
+            select(BarberAvailability)
+            .where(
+                BarberAvailability.barber_id == barber_id,
+                BarberAvailability.day_of_week == day_of_week,
+            )
+            .order_by(BarberAvailability.start_time.asc())
         )
         return list(result.scalars().all())
 

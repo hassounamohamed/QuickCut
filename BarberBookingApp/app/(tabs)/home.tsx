@@ -31,6 +31,30 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const popularBarbers = [...barbers]
+    .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
+    .slice(0, 3);
+
+  const dedupeBarbers = (items: BarberCard[]): BarberCard[] => {
+    const byId = new Map<number, BarberCard>();
+    for (const item of items) {
+      if (!byId.has(item.id)) {
+        byId.set(item.id, item);
+      }
+    }
+    return Array.from(byId.values());
+  };
+
+  const dedupeFavoriteSlots = (items: FavoriteSlotGroup[]): FavoriteSlotGroup[] => {
+    const byBarber = new Map<number, FavoriteSlotGroup>();
+    for (const item of items) {
+      if (!byBarber.has(item.barber_id)) {
+        byBarber.set(item.barber_id, item);
+      }
+    }
+    return Array.from(byBarber.values());
+  };
+
   const loadData = useCallback(async () => {
     const [barberData, favoriteSlotData, notificationData, appointments] = await Promise.all([
       clientApi.listBarbers(),
@@ -39,8 +63,8 @@ export default function HomeScreen() {
       clientApi.myHistory().catch(() => []),
     ]);
 
-    setBarbers(barberData);
-    setFavoriteSlots(favoriteSlotData);
+    setBarbers(dedupeBarbers(barberData));
+    setFavoriteSlots(dedupeFavoriteSlots(favoriteSlotData));
     setNotifications(notificationData);
     setAppointmentsCount(Array.isArray(appointments) ? appointments.length : 0);
     setActiveBookings(
@@ -156,8 +180,8 @@ export default function HomeScreen() {
                 <Text style={[styles.viewAll, { color: colors.primary }]}>Open favorites</Text>
               </Pressable>
             </View>
-            {favoriteSlots.slice(0, 2).map((group) => (
-              <View key={group.barber_id} style={styles.slotLine}>
+            {favoriteSlots.slice(0, 2).map((group, index) => (
+              <View key={`fav-${group.barber_id}-${index}`} style={styles.slotLine}>
                 <Text style={[styles.slotShop, { color: colors.text }]}>{group.shop_name}</Text>
                 <Text style={[styles.slotMeta, { color: colors.textMuted }]}>Slots: {Array.isArray(group.slots) ? group.slots.length : 0}</Text>
               </View>
@@ -230,9 +254,9 @@ export default function HomeScreen() {
             <Text style={[styles.emptyTitle, { color: colors.textMuted }]}>No barbers available</Text>
           </View>
         ) : (
-          barbers.slice(0, 5).map((barber) => (
+          popularBarbers.map((barber, index) => (
             <Pressable
-              key={barber.id}
+              key={`barber-${barber.id}-${index}`}
               style={[styles.barberCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}
               onPress={() =>
                 router.push({ pathname: '/(tabs)/search', params: { barber_id: String(barber.id) } })

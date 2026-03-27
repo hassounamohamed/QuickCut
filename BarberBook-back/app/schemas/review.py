@@ -14,6 +14,7 @@ class ReviewResponse(BaseModel):
 
     id: int
     client_id: int
+    client_name: str | None = None
     barber_id: int
     rating: int
     comment: str | None = None

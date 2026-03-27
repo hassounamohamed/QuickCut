@@ -3,3 +3,11 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Uploads should be served from cloud storage in production
+app/static/uploads/
+uploads/

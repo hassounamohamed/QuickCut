@@ -8,3 +8,11 @@ passlib[bcrypt]
 qrcode[pil]
 httpx
 python-multipart
+
+# Testing
+pytest
+pytest-asyncio
+aiosqlite
+
+# Monitoring & Error Tracking
+sentry-sdk

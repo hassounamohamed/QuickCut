@@ -15,3 +15,9 @@ class Review(Base):
 
     client = relationship("User", back_populates="reviews", foreign_keys=[client_id])
     barber = relationship("Barber", back_populates="reviews", foreign_keys=[barber_id])
+
+    @property
+    def client_name(self) -> str | None:
+        if self.client is None:
+            return None
+        return self.client.username

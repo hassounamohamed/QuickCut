@@ -52,6 +52,11 @@ function displayLabel(dateStr: string): string {
   });
 }
 
+function initialFromName(name?: string | null): string {
+  const clean = name?.trim();
+  return clean?.[0]?.toUpperCase() || 'C';
+}
+
 export default function AppointmentsScreen() {
   const { colors } = useAppColors();
   const GOLD = colors.primary;
@@ -151,13 +156,14 @@ export default function AppointmentsScreen() {
           ) : (
             data.schedule.map((item) => {
               const badge = badgeStyle(item.status);
+              const clientName = item.client_name?.trim() || `Client ${item.client_id}`;
               return (
                 <View key={item.reservation_id} style={[styles.card, { backgroundColor: colors.surface }]}> 
                   <View style={styles.cardAvatar}>
-                    <Text style={styles.cardAvatarText}>C</Text>
+                    <Text style={styles.cardAvatarText}>{initialFromName(clientName)}</Text>
                   </View>
                   <View style={styles.cardInfo}>
-                    <Text style={[styles.cardName, { color: DARK }]}>Client #{item.client_id}</Text>
+                    <Text style={[styles.cardName, { color: DARK }]}>{clientName}</Text>
                     <View style={styles.cardMeta}>
                       <Ionicons name="time-outline" size={13} color="#8E8E93" />
                       <Text style={[styles.cardTime, { color: colors.textMuted }]}> {item.booking_time.slice(0, 5)}</Text>

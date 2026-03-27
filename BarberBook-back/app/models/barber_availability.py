@@ -11,5 +11,6 @@ class BarberAvailability(Base):
     day_of_week = Column(Integer, nullable=False)  # 0=Monday ... 6=Sunday
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
+    slot_minutes = Column(Integer, nullable=False, default=30)
 
     barber = relationship("Barber", back_populates="availability")

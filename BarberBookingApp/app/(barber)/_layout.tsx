@@ -73,6 +73,13 @@ export default function BarberTabsLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="notifications"
+          options={{
+            href: null,
+            title: 'Notifications',
+          }}
+        />
       </Tabs>
       <BottomAdBanner />
     </View>

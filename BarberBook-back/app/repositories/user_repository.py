@@ -27,14 +27,12 @@ class UserRepository:
         email: str,
         username: str,
         hashed_password: str,
-        hashed_confirm_password: str,
         role: str = "user",
     ) -> User:
         user = User(
             email=email,
             username=username,
             hashed_password=hashed_password,
-            confirme_password=hashed_confirm_password,
             role=role,
         )
         self.db.add(user)

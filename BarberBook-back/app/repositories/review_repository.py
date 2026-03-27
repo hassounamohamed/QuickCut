@@ -1,5 +1,6 @@
-from sqlalchemy import and_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.review import Review
 
@@ -10,7 +11,10 @@ class ReviewRepository:
 
     async def list_by_barber(self, barber_id: int) -> list[Review]:
         result = await self.db.execute(
-            select(Review).where(Review.barber_id == barber_id).order_by(Review.created_at.desc())
+            select(Review)
+            .options(selectinload(Review.client))
+            .where(Review.barber_id == barber_id)
+            .order_by(Review.created_at.desc())
         )
         return list(result.scalars().all())
 
@@ -44,3 +48,10 @@ class ReviewRepository:
         await self.db.commit()
         await self.db.refresh(review)
         return review
+
+    async def get_average_rating_for_barber(self, barber_id: int) -> float:
+        result = await self.db.execute(
+            select(func.avg(Review.rating)).where(Review.barber_id == barber_id)
+        )
+        avg_value = result.scalar_one_or_none()
+        return float(avg_value) if avg_value is not None else 0.0

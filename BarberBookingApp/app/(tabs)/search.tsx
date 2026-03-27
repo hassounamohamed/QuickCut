@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 
 import { ClientUi } from '@/constants/client-ui';
 import { useAppColors } from '@/hooks/use-app-colors';
@@ -42,17 +43,26 @@ function buildSlots(daySlots: TimeSlot[]) {
   for (const slot of daySlots) {
     const start = toMinutes(slot.start_time);
     const end = toMinutes(slot.end_time);
-    for (let cursor = start; cursor < end; cursor += 30) {
+    const step = Math.max(15, Number(slot.slot_minutes || 30));
+    for (let cursor = start; cursor < end; cursor += step) {
       values.add(toHHmm(cursor));
     }
   }
   return Array.from(values).sort((a, b) => toMinutes(a) - toMinutes(b));
 }
 
+function backendDayOfWeek(dateValue: Date) {
+  // JS: Sunday=0...Saturday=6 -> Backend: Monday=0...Sunday=6
+  return (dateValue.getDay() + 6) % 7;
+}
+
 export default function SearchScreen() {
   const router = useRouter();
   const { colors } = useAppColors();
   const { barber_id } = useLocalSearchParams<{ barber_id?: string }>();
+  const scrollRef = useRef<ScrollView | null>(null);
+  const profileSectionY = useRef<number>(0);
+  const [pendingQrScroll, setPendingQrScroll] = useState(false);
 
   const [barbers, setBarbers] = useState<BarberCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,8 +70,10 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [selectedBarberId, setSelectedBarberId] = useState<number | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
+  const [favoriteOrder, setFavoriteOrder] = useState<number[]>([]);
   const [favoriteBusyIds, setFavoriteBusyIds] = useState<Set<number>>(new Set());
   const [availability, setAvailability] = useState<TimeSlot[]>([]);
+  const [occupiedTimes, setOccupiedTimes] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [booking, setBooking] = useState(false);
   const [selectedDate, setSelectedDate] = useState(toIsoDate(new Date()));
@@ -73,13 +85,35 @@ export default function SearchScreen() {
 
   const filteredBarbers = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return barbers;
-    return barbers.filter((item) => {
+    const searched = barbers.filter((item) => {
       const shop = item.shop_name?.toLowerCase() || '';
       const address = item.address?.toLowerCase() || '';
       return shop.includes(q) || address.includes(q);
     });
-  }, [barbers, query]);
+
+    if (q) {
+      return searched;
+    }
+
+    const primaryFavoriteId = favoriteOrder[0];
+    if (!primaryFavoriteId) {
+      return barbers;
+    }
+
+    const primary = barbers.find((item) => item.id === primaryFavoriteId);
+    if (!primary) {
+      return barbers;
+    }
+
+    if (selectedBarberId && selectedBarberId !== primaryFavoriteId) {
+      const selected = barbers.find((item) => item.id === selectedBarberId);
+      if (selected) {
+        return [primary, selected];
+      }
+    }
+
+    return [primary];
+  }, [barbers, favoriteOrder, query, selectedBarberId]);
 
   const loadBarbers = useCallback(async () => {
     const result = await clientApi.listBarbers();
@@ -88,7 +122,9 @@ export default function SearchScreen() {
 
   const loadFavorites = useCallback(async () => {
     const result = await clientApi.listFavorites();
-    setFavoriteIds(new Set(result.map((item) => item.barber_id)));
+    const ids = Array.from(new Set(result.map((item) => item.barber_id)));
+    setFavoriteIds(new Set(ids));
+    setFavoriteOrder(ids);
   }, []);
 
   useEffect(() => {
@@ -107,12 +143,32 @@ export default function SearchScreen() {
     if (Number.isNaN(id)) return;
     if (barbers.some((item) => item.id === id)) {
       setSelectedBarberId(id);
+      setPendingQrScroll(true);
     }
   }, [barber_id, barbers]);
 
   useEffect(() => {
+    if (barber_id || selectedBarberId || !barbers.length) return;
+    const primaryFavoriteId = favoriteOrder[0];
+    if (!primaryFavoriteId) return;
+    if (barbers.some((item) => item.id === primaryFavoriteId)) {
+      setSelectedBarberId(primaryFavoriteId);
+    }
+  }, [barber_id, barbers, favoriteOrder, selectedBarberId]);
+
+  useEffect(() => {
+    if (!pendingQrScroll || !selectedBarber) return;
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(0, profileSectionY.current - 12), animated: true });
+      setPendingQrScroll(false);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [pendingQrScroll, selectedBarber]);
+
+  useEffect(() => {
     if (!selectedBarberId) {
       setAvailability([]);
+      setOccupiedTimes([]);
       return;
     }
 
@@ -128,6 +184,22 @@ export default function SearchScreen() {
       }
     })();
   }, [selectedBarberId]);
+
+  useEffect(() => {
+    if (!selectedBarberId) {
+      setOccupiedTimes([]);
+      return;
+    }
+
+    (async () => {
+      try {
+        const result = await clientApi.getOccupiedTimes(selectedBarberId, selectedDate);
+        setOccupiedTimes(result);
+      } catch {
+        setOccupiedTimes([]);
+      }
+    })();
+  }, [selectedBarberId, selectedDate]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -152,6 +224,7 @@ export default function SearchScreen() {
           next.delete(barberId);
           return next;
         });
+        setFavoriteOrder((prev) => prev.filter((id) => id !== barberId));
       } else {
         await clientApi.favoriteBarber(barberId);
         setFavoriteIds((prev) => {
@@ -159,6 +232,7 @@ export default function SearchScreen() {
           next.add(barberId);
           return next;
         });
+        setFavoriteOrder((prev) => (prev.includes(barberId) ? prev : [...prev, barberId]));
       }
     } catch {
       Alert.alert('Favorites', 'Could not update favorites right now.');
@@ -173,10 +247,13 @@ export default function SearchScreen() {
 
   const slotsForDate = useMemo(() => {
     const date = new Date(`${selectedDate}T00:00:00`);
-    const day = date.getDay();
+    const day = backendDayOfWeek(date);
     const daySlots = availability.filter((item) => item.day_of_week === day);
-    return buildSlots(daySlots);
-  }, [availability, selectedDate]);
+    const occupied = new Set(
+      occupiedTimes.map((value) => value.slice(0, 5)),
+    );
+    return buildSlots(daySlots).filter((slot) => !occupied.has(slot));
+  }, [availability, occupiedTimes, selectedDate]);
 
   const onBook = async (slot: string) => {
     if (!selectedBarberId) return;
@@ -192,36 +269,58 @@ export default function SearchScreen() {
       ]);
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
-      const message = typeof detail === 'string' ? detail : 'Could not create reservation';
+      const message =
+        typeof detail === 'string'
+          ? detail
+          : Array.isArray(detail) && detail.length > 0
+            ? String(detail[0]?.msg || detail[0])
+            : 'Could not create reservation';
       Alert.alert('Booking Failed', message);
     } finally {
       setBooking(false);
     }
   };
 
+  const openMap = async () => {
+    if (!selectedBarber) return;
+
+    const hasLatLng =
+      typeof selectedBarber.latitude === 'number' &&
+      !Number.isNaN(selectedBarber.latitude) &&
+      typeof selectedBarber.longitude === 'number' &&
+      !Number.isNaN(selectedBarber.longitude);
+
+    const url = hasLatLng
+      ? `https://www.google.com/maps/search/?api=1&query=${selectedBarber.latitude},${selectedBarber.longitude}`
+      : selectedBarber.address
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedBarber.address)}`
+        : null;
+
+    if (!url) {
+      Alert.alert('Location', 'No location available for this barber yet.');
+      return;
+    }
+
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (!supported) {
+        Alert.alert('Location', 'Could not open map on this device.');
+        return;
+      }
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Location', 'Could not open map right now.');
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={[styles.avatar, { backgroundColor: colors.primaryMuted, borderColor: colors.primary }]}> 
-              <Text style={[styles.avatarText, { color: colors.primary }]}>S</Text>
-            </View>
-            <View>
-              <Text style={[styles.greeting, { color: colors.text }]}>Hello 👋</Text>
-              <Text style={[styles.roleLabel, { color: colors.textMuted }]}>Find your next barber</Text>
-            </View>
-          </View>
-          <Pressable
-            style={[styles.iconBtn, { backgroundColor: colors.surface, borderColor: colors.divider }]}
-            onPress={() => router.push('/(tabs)/notifications')}
-          >
-            <Ionicons name="notifications-outline" size={20} color={colors.text} />
-          </Pressable>
-        </View>
+        
 
         <Text style={[styles.pageTitle, { color: colors.text }]}>Search</Text>
 
@@ -291,6 +390,40 @@ export default function SearchScreen() {
         {selectedBarber ? (
           <View style={[styles.bookingCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}> 
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Book with {selectedBarber.shop_name || `Barber #${selectedBarber.id}`}</Text>
+
+            <View
+              onLayout={(event) => {
+                profileSectionY.current = event.nativeEvent.layout.y;
+              }}
+              style={[styles.profileCard, { backgroundColor: colors.background, borderColor: colors.divider }]}
+            > 
+              <Text style={[styles.profileTitle, { color: colors.text }]}>Barber Profile</Text>
+              <Text style={[styles.profileMeta, { color: colors.textMuted }]}>Rating: {Number(selectedBarber.rating || 0).toFixed(1)}</Text>
+              <Text style={[styles.profileMeta, { color: colors.textMuted }]}>
+                Address: {selectedBarber.address || 'No address provided'}
+              </Text>
+              <Pressable
+                onPress={openMap}
+                style={[styles.mapBtn, { borderColor: colors.primary, backgroundColor: colors.primaryMuted }]}
+              >
+                <Text style={[styles.mapBtnText, { color: colors.primary }]}>Open Location in Google Maps</Text>
+              </Pressable>
+
+              {Array.isArray(selectedBarber.photos) && selectedBarber.photos.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoRow}>
+                  {selectedBarber.photos.map((photo, index) => (
+                    <Image
+                      key={`photo-${photo.id}-${index}`}
+                      source={{ uri: photo.photo_url }}
+                      style={styles.profilePhoto}
+                      contentFit="cover"
+                    />
+                  ))}
+                </ScrollView>
+              ) : (
+                <Text style={[styles.profileMeta, { color: colors.textMuted }]}>No photos yet.</Text>
+              )}
+            </View>
 
             <Text style={[styles.label, { color: colors.textMuted }]}>Date (YYYY-MM-DD)</Text>
             <TextInput
@@ -410,6 +543,31 @@ const styles = StyleSheet.create({
     ...ClientUi.shadow.card,
   },
   sectionTitle: { fontSize: 16, fontWeight: '800' },
+  profileCard: {
+    borderWidth: 1,
+    borderRadius: ClientUi.radius.tile,
+    padding: 12,
+    gap: 8,
+  },
+  profileTitle: { fontSize: 14, fontWeight: '800' },
+  profileMeta: { fontSize: 12 },
+  mapBtn: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignSelf: 'flex-start',
+  },
+  mapBtnText: { fontSize: 12, fontWeight: '800' },
+  photoRow: {
+    gap: 8,
+    paddingTop: 4,
+  },
+  profilePhoto: {
+    width: 92,
+    height: 92,
+    borderRadius: 12,
+  },
   label: { fontSize: 12, fontWeight: '600' },
   dateInput: {
     borderWidth: 1,

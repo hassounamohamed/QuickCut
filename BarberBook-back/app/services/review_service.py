@@ -17,6 +17,14 @@ class ReviewService:
         self.barber_repository = barber_repository
         self.booking_repository = booking_repository
 
+    async def _sync_barber_rating(self, barber_id: int) -> None:
+        barber = await self.barber_repository.get_by_id(barber_id)
+        if not barber:
+            return
+
+        avg_rating = await self.review_repository.get_average_rating_for_barber(barber_id)
+        await self.barber_repository.update_rating(barber, avg_rating)
+
     async def create_for_client(self, client_id: int, payload: ReviewCreate):
         reservation = await self.booking_repository.get_by_id(payload.reservation_id)
         if not reservation or reservation.client_id != client_id:
@@ -31,12 +39,23 @@ class ReviewService:
                 detail="Only completed reservations can be reviewed",
             )
 
-        return await self.review_repository.create(
+        barber = await self.barber_repository.get_by_id(reservation.barber_id)
+        if not barber:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Barber not found",
+            )
+
+        created_review = await self.review_repository.create(
             client_id=client_id,
             barber_id=reservation.barber_id,
             rating=payload.rating,
             comment=payload.comment,
         )
+
+        await self._sync_barber_rating(reservation.barber_id)
+
+        return created_review
 
     async def list_feedback_for_barber_user(self, barber_user_id: int):
         barber = await self.barber_repository.get_by_user_id(barber_user_id)
@@ -46,7 +65,9 @@ class ReviewService:
                 detail="Barber profile not found",
             )
 
-        return await self.review_repository.list_by_barber(barber.id)
+        reviews = await self.review_repository.list_by_barber(barber.id)
+        await self._sync_barber_rating(barber.id)
+        return reviews
 
     async def list_feedback_for_barber(self, barber_id: int):
         barber = await self.barber_repository.get_by_id(barber_id)
@@ -56,4 +77,6 @@ class ReviewService:
                 detail="Barber not found",
             )
 
-        return await self.review_repository.list_by_barber(barber_id)
+        reviews = await self.review_repository.list_by_barber(barber_id)
+        await self._sync_barber_rating(barber_id)
+        return reviews

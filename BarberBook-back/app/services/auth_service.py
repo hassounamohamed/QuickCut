@@ -37,13 +37,11 @@ class AuthService:
             )
 
         hashed_password = hash_password(payload.password)
-        hashed_confirm_password = hash_password(payload.confirme_password)
 
         return await self.user_repository.create_user(
             email=payload.email,
             username=payload.username,
             hashed_password=hashed_password,
-            hashed_confirm_password=hashed_confirm_password,
             role=payload.role,
         )
 

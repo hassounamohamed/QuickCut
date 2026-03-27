@@ -6,24 +6,35 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import require_role
 from app.db.session import get_db
 from app.models.user import User
+from app.repositories.barber_availability_repository import BarberAvailabilityRepository
 from app.repositories.barber_repository import BarberRepository
 from app.repositories.booking_repository import BookingRepository
+from app.repositories.device_token_repository import DeviceTokenRepository
+from app.repositories.notification_repository import NotificationRepository
 from app.schemas.booking import (
     BarberDashboardResponse,
     LiveQueueResponse,
+    OccupiedTimesResponse,
     ReservationActionResponse,
     ReservationCreate,
     ReservationResponse,
 )
 from app.services.booking_service import BookingService
+from app.services.notification_service import NotificationService
 
 router = APIRouter(prefix="/reservations", tags=["Reservations"])
 
 
 def build_service(db: AsyncSession) -> BookingService:
+    notification_service = NotificationService(
+        notification_repository=NotificationRepository(db),
+        device_token_repository=DeviceTokenRepository(db),
+    )
     return BookingService(
         booking_repository=BookingRepository(db),
         barber_repository=BarberRepository(db),
+        barber_availability_repository=BarberAvailabilityRepository(db),
+        notification_service=notification_service,
     )
 
 
@@ -113,3 +124,13 @@ async def barber_live_queue(
 ):
     service = build_service(db)
     return await service.live_queue(barber_id, target_date)
+
+
+@router.get("/barber/{barber_id}/occupied-times", response_model=OccupiedTimesResponse)
+async def barber_occupied_times(
+    barber_id: int,
+    target_date: date,
+    db: AsyncSession = Depends(get_db),
+):
+    service = build_service(db)
+    return await service.occupied_times(barber_id, target_date)

@@ -3,6 +3,7 @@ import api from './api';
 export interface ScheduleItem {
   reservation_id: number;
   client_id: number;
+  client_name?: string | null;
   booking_time: string;
   status: string;
 }
@@ -24,6 +25,7 @@ export interface LiveQueue {
   queue: Array<{
     reservation_id: number;
     client_id: number;
+    client_name?: string | null;
     booking_time: string;
     status: string;
   }>;
@@ -35,11 +37,13 @@ export interface AvailabilitySlot {
   day_of_week: number;
   start_time: string;
   end_time: string;
+  slot_minutes: number;
 }
 
 export interface Review {
   id: number;
   client_id: number;
+  client_name?: string | null;
   barber_id: number;
   rating: number;
   comment: string | null;
@@ -107,6 +111,7 @@ export const barberApi = {
     day_of_week: number;
     start_time: string;
     end_time: string;
+    slot_minutes: number;
   }): Promise<AvailabilitySlot> =>
     api.post<AvailabilitySlot>('/barber-availability', payload).then((r) => r.data),
 
@@ -138,7 +143,12 @@ export const barberApi = {
       name: payload.name ?? 'photo.jpg',
     } as any);
 
-    return api.post('/barbers/me/photos/upload', formData).then((r) => r.data);
+    return api
+      .post('/barbers/me/photos/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000,
+      })
+      .then((r) => r.data);
   },
 
   deletePhoto: (photoId: number) =>
