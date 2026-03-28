@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -47,6 +48,7 @@ function initialFromName(name?: string | null): string {
 }
 
 export default function ReviewsScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppColors();
   const GOLD = colors.primary;
   const BG = colors.background;
@@ -61,14 +63,14 @@ export default function ReviewsScreen() {
       setReviews(data);
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
-      const message = typeof detail === 'string' ? detail : 'Could not load reviews.';
-      Alert.alert('Reviews Error', message);
+      const message = typeof detail === 'string' ? detail : t('barberReviews.couldNotLoad');
+      Alert.alert(t('barberReviews.errorTitle'), message);
       setReviews([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadReviews();
@@ -101,7 +103,7 @@ export default function ReviewsScreen() {
           />
         }
       >
-        <Text style={[styles.title, { color: DARK }]}>Client Reviews</Text>
+        <Text style={[styles.title, { color: DARK }]}>{t('barberReviews.title')}</Text>
 
         {/* Summary banner */}
         {reviews.length > 0 && (
@@ -109,7 +111,7 @@ export default function ReviewsScreen() {
             <View style={styles.summaryLeft}>
               <Text style={styles.avgBig}>{avgRating.toFixed(1)}</Text>
               <StarRow rating={Math.round(avgRating)} />
-              <Text style={styles.reviewCount}>{reviews.length} reviews</Text>
+              <Text style={styles.reviewCount}>{reviews.length} {t('barberReviews.reviews')}</Text>
             </View>
             <View style={styles.summaryRight}>
               {distribution.map(({ star, count }) => (
@@ -140,12 +142,12 @@ export default function ReviewsScreen() {
         ) : reviews.length === 0 ? (
           <View style={styles.emptyBox}>
             <Ionicons name="chatbubble-ellipses-outline" size={52} color="#CBD5E0" />
-            <Text style={styles.emptyTitle}>No reviews yet</Text>
-            <Text style={styles.emptySub}>Client feedback will appear here</Text>
+            <Text style={styles.emptyTitle}>{t('barberReviews.noReviews')}</Text>
+            <Text style={styles.emptySub}>{t('barberReviews.feedbackWillAppear')}</Text>
           </View>
         ) : (
           reviews.map((review) => {
-            const clientName = review.client_name?.trim() || 'Client';
+            const clientName = review.client_name?.trim() || t('auth.client');
             return (
               <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.surface }]}> 
                 <View style={styles.reviewHeader}>

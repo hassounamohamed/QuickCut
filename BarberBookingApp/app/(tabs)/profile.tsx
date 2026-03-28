@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -25,8 +26,9 @@ const { colors } = AppTheme;
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { user, logout, syncProfile } = useAuthContext();
-  const { darkMode, notificationsEnabled, setDarkMode, setNotificationsEnabled } = useSettings();
+  const { darkMode, notificationsEnabled, language, setDarkMode, setNotificationsEnabled, setLanguage } = useSettings();
   const bg = darkMode ? '#12131A' : colors.background;
   const surface = darkMode ? '#1B1D28' : colors.surface;
   const text = darkMode ? '#ECEDEE' : colors.text;
@@ -80,10 +82,10 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('profile.logoutConfirmTitle'), t('profile.logoutConfirmMessage'), [
+      { text: t('profile.cancel'), style: 'cancel' },
       {
-        text: 'Log Out',
+        text: t('profile.logout'),
         style: 'destructive',
         onPress: () => {
           logout();
@@ -186,11 +188,11 @@ export default function ProfileScreen() {
         </View>
 
         <View style={[styles.card, { backgroundColor: surface, borderColor: border }]}> 
-          <Text style={[styles.sectionTitle, { color: text }]}>Settings</Text>
+          <Text style={[styles.sectionTitle, { color: text }]}>{t('profile.settings')}</Text>
           <View style={styles.row}>
             <View style={styles.labelWrap}>
               <Ionicons name="moon-outline" size={18} color={colors.primary} />
-              <Text style={[styles.label, { color: text }]}>Dark Mode</Text>
+              <Text style={[styles.label, { color: text }]}>{t('profile.darkMode')}</Text>
             </View>
             <Switch value={darkMode} onValueChange={setDarkMode} />
           </View>
@@ -200,7 +202,7 @@ export default function ProfileScreen() {
           <View style={styles.row}>
             <View style={styles.labelWrap}>
               <Ionicons name="notifications-outline" size={18} color={colors.primary} />
-              <Text style={[styles.label, { color: text }]}>Notifications</Text>
+              <Text style={[styles.label, { color: text }]}>{t('profile.notifications')}</Text>
             </View>
             <Switch
               value={notificationsEnabled}
@@ -208,14 +210,44 @@ export default function ProfileScreen() {
                 const ok = await setNotificationsEnabled(value);
                 if (!ok && value) {
                   Alert.alert(
-                    'Permission Required',
-                    'Notification permission was denied. You can enable it in phone settings.',
+                    t('profile.permissionRequired'),
+                    t('profile.notificationPermissionDenied'),
                   );
                 }
               }}
             />
           </View>
-          <Text style={[styles.note, { color: muted }]}>Theme applies to supported screens.</Text>
+
+          <View style={[styles.divider, { backgroundColor: border }]} />
+          <Text style={[styles.langLabel, { color: text }]}>{t('profile.language')}</Text>
+          <View style={styles.langRow}>
+            <Pressable
+              style={[styles.langChip, language === 'en' && styles.langChipActive, { borderColor: border }]}
+              onPress={() => {
+                void setLanguage('en');
+              }}
+            >
+              <Text style={[styles.langChipText, { color: text }]}>{t('common.english')}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.langChip, language === 'fr' && styles.langChipActive, { borderColor: border }]}
+              onPress={() => {
+                void setLanguage('fr');
+              }}
+            >
+              <Text style={[styles.langChipText, { color: text }]}>{t('common.french')}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.langChip, language === 'ar' && styles.langChipActive, { borderColor: border }]}
+              onPress={() => {
+                void setLanguage('ar');
+              }}
+            >
+              <Text style={[styles.langChipText, { color: text }]}>{t('common.arabic')}</Text>
+            </Pressable>
+          </View>
+
+          <Text style={[styles.note, { color: muted }]}>{t('profile.themeNote')}</Text>
         </View>
 
         <Pressable
@@ -229,7 +261,7 @@ export default function ProfileScreen() {
           onPress={handleLogout}
         >
           <Ionicons name="log-out-outline" size={18} color="#DC2626" />
-          <Text style={styles.logoutText}>Log Out</Text>
+          <Text style={styles.logoutText}>{t('profile.logout')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -345,6 +377,19 @@ const styles = StyleSheet.create({
   labelWrap: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   label: { fontSize: 15, fontWeight: '600', color: colors.text },
   divider: { height: 1, backgroundColor: colors.divider },
+  langLabel: { marginTop: 10, marginBottom: 8, fontSize: 14, fontWeight: '700' },
+  langRow: { flexDirection: 'row', gap: 8 },
+  langChip: {
+    flex: 1,
+    minHeight: 36,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  langChipActive: { backgroundColor: '#F5EFD7' },
+  langChipText: { fontSize: 12, fontWeight: '700' },
   note: { marginTop: 10, fontSize: 12 },
   logoutBtn: {
     borderWidth: 1,

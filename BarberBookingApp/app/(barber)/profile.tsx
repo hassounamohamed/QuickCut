@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -30,8 +31,9 @@ const DARK = AppTheme.colors.text;
 
 export default function BarberProfileScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { user, logout } = useAuthContext();
-  const { darkMode, notificationsEnabled, setDarkMode, setNotificationsEnabled } = useSettings();
+  const { darkMode, notificationsEnabled, language, setDarkMode, setNotificationsEnabled, setLanguage } = useSettings();
   const bg = darkMode ? '#12131A' : BG;
   const surface = darkMode ? '#1B1D28' : '#FFFFFF';
   const border = darkMode ? '#2B2F3A' : '#E8E8E8';
@@ -183,10 +185,10 @@ export default function BarberProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('profile.logoutConfirmTitle'), t('profile.logoutConfirmMessage'), [
+      { text: t('profile.cancel'), style: 'cancel' },
       {
-        text: 'Log Out',
+        text: t('profile.logout'),
         style: 'destructive',
         onPress: () => {
           logout();
@@ -334,12 +336,12 @@ export default function BarberProfileScreen() {
 
           {/* ─── Settings ─── */}
           <View style={[styles.card, { backgroundColor: surface, borderColor: border }]}> 
-            <Text style={[styles.cardTitle, { color: textMain }]}>Settings</Text>
+            <Text style={[styles.cardTitle, { color: textMain }]}>{t('profile.settings')}</Text>
 
             <View style={styles.settingRow}>
               <View style={styles.settingLabelWrap}>
                 <Ionicons name="moon-outline" size={17} color={GOLD} />
-                <Text style={[styles.settingLabel, { color: textMuted }]}>Dark Mode</Text>
+                <Text style={[styles.settingLabel, { color: textMuted }]}>{t('profile.darkMode')}</Text>
               </View>
               <Switch value={darkMode} onValueChange={setDarkMode} />
             </View>
@@ -349,7 +351,7 @@ export default function BarberProfileScreen() {
             <View style={styles.settingRow}>
               <View style={styles.settingLabelWrap}>
                 <Ionicons name="notifications-outline" size={17} color={GOLD} />
-                <Text style={[styles.settingLabel, { color: textMuted }]}>Notifications</Text>
+                <Text style={[styles.settingLabel, { color: textMuted }]}>{t('profile.notifications')}</Text>
               </View>
               <Switch
                 value={notificationsEnabled}
@@ -357,19 +359,60 @@ export default function BarberProfileScreen() {
                   const ok = await setNotificationsEnabled(value);
                   if (!ok && value) {
                     Alert.alert(
-                      'Permission Required',
-                      'Notification permission was denied. You can enable it in phone settings.',
+                      t('profile.permissionRequired'),
+                      t('profile.notificationPermissionDenied'),
                     );
                   }
                 }}
               />
+            </View>
+
+            <View style={[styles.settingDivider, { backgroundColor: border }]} />
+            <Text style={[styles.languageLabel, { color: textMain }]}>{t('profile.language')}</Text>
+            <View style={styles.languageRow}>
+              <TouchableOpacity
+                style={[
+                  styles.languageChip,
+                  language === 'en' && styles.languageChipActive,
+                  { borderColor: border },
+                ]}
+                onPress={() => {
+                  void setLanguage('en');
+                }}
+              >
+                <Text style={[styles.languageChipText, { color: textMain }]}>{t('common.english')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.languageChip,
+                  language === 'fr' && styles.languageChipActive,
+                  { borderColor: border },
+                ]}
+                onPress={() => {
+                  void setLanguage('fr');
+                }}
+              >
+                <Text style={[styles.languageChipText, { color: textMain }]}>{t('common.french')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.languageChip,
+                  language === 'ar' && styles.languageChipActive,
+                  { borderColor: border },
+                ]}
+                onPress={() => {
+                  void setLanguage('ar');
+                }}
+              >
+                <Text style={[styles.languageChipText, { color: textMain }]}>{t('common.arabic')}</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
           {/* ─── Logout ─── */}
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={18} color="#FF3B30" />
-            <Text style={styles.logoutText}>Log Out</Text>
+            <Text style={styles.logoutText}>{t('profile.logout')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -495,6 +538,19 @@ const styles = StyleSheet.create({
   settingLabelWrap: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   settingLabel: { fontSize: 14, color: '#4B5563', fontWeight: '600' },
   settingDivider: { height: 1, backgroundColor: '#E8E8E8' },
+  languageLabel: { marginTop: 10, marginBottom: 8, fontSize: 13, fontWeight: '700' },
+  languageRow: { flexDirection: 'row', gap: 8 },
+  languageChip: {
+    flex: 1,
+    minHeight: 36,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5F7FA',
+  },
+  languageChipActive: { backgroundColor: '#FFF8E7', borderColor: '#F1E3B8' },
+  languageChipText: { fontSize: 12, fontWeight: '700' },
 
   logoutBtn: {
     flexDirection: 'row',

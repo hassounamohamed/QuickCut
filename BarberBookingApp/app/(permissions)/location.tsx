@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -13,6 +14,7 @@ type Role = 'user' | 'barber';
 
 export default function LocationPermissionScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useAppColors();
   const params = useLocalSearchParams<{ role?: string }>();
   const role: Role = params.role === 'barber' ? 'barber' : 'user';
@@ -25,7 +27,7 @@ export default function LocationPermissionScreen() {
     try {
       const result = await Location.requestForegroundPermissionsAsync();
       if (!result.granted && result.canAskAgain === false) {
-        Alert.alert('Permission Blocked', 'You can enable location access later in Settings.');
+        Alert.alert(t('permissions.permissionBlockedTitle'), t('permissions.locationPermissionBlockedMessage'));
       }
       goNext();
     } catch {
@@ -40,17 +42,17 @@ export default function LocationPermissionScreen() {
           <Ionicons name="location-outline" size={58} color={colors.primary} />
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>Find barbers near you</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('permissions.locationTitle')}</Text>
         <Text style={[styles.description, { color: colors.textMuted }]}>
-          Enable location to see nearby barbers, faster recommendations, and more accurate booking times.
+          {t('permissions.locationDescription')}
         </Text>
 
         <Pressable style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary }, pressed && styles.pressed]} onPress={handleEnable}>
-          <Text style={styles.primaryBtnText}>Enable Location</Text>
+          <Text style={styles.primaryBtnText}>{t('permissions.enableLocation')}</Text>
         </Pressable>
 
         <Pressable style={({ pressed }) => [styles.ghostBtn, { backgroundColor: colors.surface, borderColor: colors.divider }, pressed && styles.pressed]} onPress={goNext}>
-          <Text style={[styles.ghostBtnText, { color: colors.textMuted }]}>Skip</Text>
+          <Text style={[styles.ghostBtnText, { color: colors.textMuted }]}>{t('common.skip')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

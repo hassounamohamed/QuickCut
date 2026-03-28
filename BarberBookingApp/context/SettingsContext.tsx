@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
+import i18n from '@/src/i18n';
 import { clientApi } from '@/services/client.api';
 
 const SETTINGS_FILE = `${FileSystem.documentDirectory ?? ''}quickcut.settings.v1.json`;
@@ -11,32 +12,40 @@ type StoredSettings = {
   darkMode: boolean;
   notificationsEnabled: boolean;
   permissionFlowSeen: boolean;
+  language: AppLanguage;
 };
+
+export type AppLanguage = 'en' | 'fr' | 'ar';
 
 interface SettingsContextType {
   darkMode: boolean;
   notificationsEnabled: boolean;
   permissionFlowSeen: boolean;
+  language: AppLanguage;
   initialized: boolean;
   setDarkMode: (value: boolean) => Promise<void>;
   setNotificationsEnabled: (value: boolean) => Promise<boolean>;
   setPermissionFlowSeen: (value: boolean) => Promise<void>;
+  setLanguage: (value: AppLanguage) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType>({
   darkMode: false,
   notificationsEnabled: false,
   permissionFlowSeen: false,
+  language: 'en',
   initialized: false,
   setDarkMode: async () => {},
   setNotificationsEnabled: async () => false,
   setPermissionFlowSeen: async () => {},
+  setLanguage: async () => {},
 });
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkModeState] = useState(false);
   const [notificationsEnabled, setNotificationsEnabledState] = useState(false);
   const [permissionFlowSeen, setPermissionFlowSeenState] = useState(false);
+  const [language, setLanguageState] = useState<AppLanguage>('en');
   const [initialized, setInitialized] = useState(false);
   const [pushToken, setPushToken] = useState<string | null>(null);
 
@@ -64,6 +73,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setDarkModeState(Boolean(parsed.darkMode));
         setNotificationsEnabledState(Boolean(parsed.notificationsEnabled));
         setPermissionFlowSeenState(Boolean(parsed.permissionFlowSeen));
+        const nextLanguage =
+          parsed.language === 'fr' || parsed.language === 'ar' || parsed.language === 'en'
+            ? parsed.language
+            : 'en';
+        setLanguageState(nextLanguage);
+        await i18n.changeLanguage(nextLanguage);
       } catch {
         // Ignore storage read failures and continue with defaults.
       } finally {
@@ -79,9 +94,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const setDarkMode = useCallback(
     async (value: boolean) => {
       setDarkModeState(value);
-      await persist({ darkMode: value, notificationsEnabled, permissionFlowSeen });
+      await persist({ darkMode: value, notificationsEnabled, permissionFlowSeen, language });
     },
-    [notificationsEnabled, permissionFlowSeen, persist],
+    [language, notificationsEnabled, permissionFlowSeen, persist],
   );
 
   const setNotificationsEnabled = useCallback(
@@ -120,18 +135,27 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       }
 
       setNotificationsEnabledState(value);
-      await persist({ darkMode, notificationsEnabled: value, permissionFlowSeen });
+      await persist({ darkMode, notificationsEnabled: value, permissionFlowSeen, language });
       return true;
     },
-    [darkMode, permissionFlowSeen, persist, pushToken],
+    [darkMode, language, permissionFlowSeen, persist, pushToken],
   );
 
   const setPermissionFlowSeen = useCallback(
     async (value: boolean) => {
       setPermissionFlowSeenState(value);
-      await persist({ darkMode, notificationsEnabled, permissionFlowSeen: value });
+      await persist({ darkMode, notificationsEnabled, permissionFlowSeen: value, language });
     },
-    [darkMode, notificationsEnabled, persist],
+    [darkMode, language, notificationsEnabled, persist],
+  );
+
+  const setLanguage = useCallback(
+    async (value: AppLanguage) => {
+      setLanguageState(value);
+      await i18n.changeLanguage(value);
+      await persist({ darkMode, notificationsEnabled, permissionFlowSeen, language: value });
+    },
+    [darkMode, notificationsEnabled, permissionFlowSeen, persist],
   );
 
   const contextValue = useMemo(
@@ -139,17 +163,21 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       darkMode,
       notificationsEnabled,
       permissionFlowSeen,
+      language,
       initialized,
       setDarkMode,
       setNotificationsEnabled,
       setPermissionFlowSeen,
+      setLanguage,
     }),
     [
       darkMode,
       initialized,
+      language,
       notificationsEnabled,
       permissionFlowSeen,
       setDarkMode,
+      setLanguage,
       setNotificationsEnabled,
       setPermissionFlowSeen,
     ],

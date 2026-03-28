@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +20,7 @@ import { clientApi } from '@/services/client.api';
 
 export default function FavoritesScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useAppColors();
 
   const [items, setItems] = useState<FavoriteBarber[]>([]);
@@ -60,8 +62,8 @@ export default function FavoritesScreen() {
       await loadData();
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
-      const message = typeof detail === 'string' ? detail : 'Could not remove favorite';
-      Alert.alert('Error', message);
+      const message = typeof detail === 'string' ? detail : t('favorites.couldNotRemove');
+      Alert.alert(t('favorites.errorTitle'), message);
     }
   };
 
@@ -73,7 +75,7 @@ export default function FavoritesScreen() {
       >
        
 
-        <Text style={[styles.pageTitle, { color: colors.text }]}>Favorites</Text>
+        <Text style={[styles.pageTitle, { color: colors.text }]}>{t('favorites.title')}</Text>
 
         {slotGroups.length ? (
           <View
@@ -82,12 +84,12 @@ export default function FavoritesScreen() {
               { backgroundColor: colors.surface, borderColor: colors.divider },
             ]}
           >
-            <Text style={[styles.slotsTitle, { color: colors.text }]}>Availability Snapshot</Text>
+            <Text style={[styles.slotsTitle, { color: colors.text }]}>{t('favorites.availabilitySnapshot')}</Text>
             {slotGroups.slice(0, 3).map((item, idx) => (
               <View key={`${item.barber_id}-${idx}`} style={styles.slotLine}>
                 <Text style={[styles.slotShop, { color: colors.text }]}>{item.shop_name}</Text>
                 <Text style={[styles.slotMeta, { color: colors.textMuted }]}>
-                  {Array.isArray(item.slots) ? item.slots.length : 0} slots
+                  {Array.isArray(item.slots) ? item.slots.length : 0} {t('favorites.slots')}
                 </Text>
               </View>
             ))}
@@ -98,7 +100,7 @@ export default function FavoritesScreen() {
           <ActivityIndicator size="large" color={colors.primary} />
         ) : items.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}>
-            <Text style={[styles.empty, { color: colors.textMuted }]}>No favorite barbers yet.</Text>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>{t('favorites.empty')}</Text>
           </View>
         ) : (
           <View style={styles.list}>
@@ -110,13 +112,13 @@ export default function FavoritesScreen() {
                   style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.divider }]}
                 >
                   <Text style={[styles.name, { color: colors.text }]}>
-                    {barber?.shop_name?.trim() || 'Unnamed Barber'}
+                    {barber?.shop_name?.trim() || t('favorites.unnamedBarber')}
                   </Text>
                   <Text style={[styles.meta, { color: colors.textMuted }]}>
-                    {barber?.address || 'No address'}
+                    {barber?.address || t('favorites.noAddress')}
                   </Text>
                   <Text style={[styles.meta, { color: colors.textMuted }]}>
-                    Rating {Number(barber?.rating ?? 0).toFixed(1)}
+                    {t('favorites.rating')} {Number(barber?.rating ?? 0).toFixed(1)}
                   </Text>
 
                   <View style={styles.actions}>
@@ -129,14 +131,14 @@ export default function FavoritesScreen() {
                       }
                       style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
                     >
-                      <Text style={styles.primaryBtnText}>Book</Text>
+                      <Text style={styles.primaryBtnText}>{t('favorites.book')}</Text>
                     </Pressable>
 
                     <Pressable
                       onPress={() => onRemove(item.barber_id)}
                       style={[styles.outlineBtn, { borderColor: colors.danger }]}
                     >
-                      <Text style={[styles.outlineBtnText, { color: colors.danger }]}>Remove</Text>
+                      <Text style={[styles.outlineBtnText, { color: colors.danger }]}>{t('favorites.remove')}</Text>
                     </Pressable>
                   </View>
                 </View>

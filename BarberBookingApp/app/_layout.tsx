@@ -3,12 +3,14 @@ import * as ExpoSplashScreen from 'expo-splash-screen';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
 
 import SplashScreen from '@/components/SplashScreen';
 import { AuthProvider } from '@/context/AuthContext';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { NavigationDarkTheme, NavigationTheme } from '@/constants/theme';
+import '@/src/i18n';
 
 void ExpoSplashScreen.preventAutoHideAsync().catch(() => {
   // Expo Go/dev runtime can fail to activate keep-awake in some Android setups.
@@ -40,6 +42,7 @@ export default function RootLayout() {
 }
 
 function AppLayout() {
+  const { t } = useTranslation();
   const { darkMode } = useSettings();
 
   return (
@@ -50,7 +53,7 @@ function AppLayout() {
           <Stack.Screen name="(permissions)" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="(barber)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: t('common.modal') }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

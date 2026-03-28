@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Pressable,
@@ -15,13 +16,14 @@ import { useAppColors } from '@/hooks/use-app-colors';
 import type { NotificationItem } from '@/services/client.api';
 import { clientApi } from '@/services/client.api';
 
-function prettyDate(value: string) {
+function formatDate(value: string, unknownLabel: string) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Unknown date';
+  if (Number.isNaN(date.getTime())) return unknownLabel;
   return date.toLocaleString();
 }
 
 export default function BarberNotificationsScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppColors();
 
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -76,14 +78,14 @@ export default function BarberNotificationsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={[styles.headerCard, { backgroundColor: colors.primaryMuted, borderColor: colors.divider }]}> 
-          <Text style={[styles.title, { color: colors.text }]}>Notifications</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Booking updates and alerts for your barber account.</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('notificationsScreen.title')}</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>{t('notificationsScreen.barberSubtitle')}</Text>
         </View>
 
         {loading ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : items.length === 0 ? (
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>No notifications yet.</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('notificationsScreen.empty')}</Text>
         ) : (
           <View style={styles.list}>
             {items.map((item) => (
@@ -102,12 +104,14 @@ export default function BarberNotificationsScreen() {
                   <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
                   {!item.is_read ? (
                     <View style={[styles.badge, { backgroundColor: colors.primary }]}> 
-                      <Text style={styles.badgeText}>{markingId === item.id ? '...' : 'NEW'}</Text>
+                      <Text style={styles.badgeText}>{markingId === item.id ? '...' : t('notificationsScreen.new')}</Text>
                     </View>
                   ) : null}
                 </View>
                 <Text style={[styles.cardBody, { color: colors.textMuted }]}>{item.body}</Text>
-                <Text style={[styles.cardDate, { color: colors.textMuted }]}>{prettyDate(item.created_at)}</Text>
+                <Text style={[styles.cardDate, { color: colors.textMuted }]}>
+                  {formatDate(item.created_at, t('notificationsScreen.unknownDate'))}
+                </Text>
               </Pressable>
             ))}
           </View>

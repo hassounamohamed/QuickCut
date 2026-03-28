@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -13,6 +14,7 @@ type Role = 'user' | 'barber';
 
 export default function PermissionSuccessScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useAppColors();
   const { setPermissionFlowSeen } = useSettings();
   const params = useLocalSearchParams<{ role?: string }>();
@@ -25,8 +27,8 @@ export default function PermissionSuccessScreen() {
           <Ionicons name="checkmark-circle" size={82} color="#2DBE74" />
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>{"You're all set ✅"}</Text>
-        <Text style={[styles.description, { color: colors.textMuted }]}>Enjoy booking your next haircut easily.</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{`${t('permissions.successTitle')} ✅`}</Text>
+        <Text style={[styles.description, { color: colors.textMuted }]}>{t('permissions.successDescription')}</Text>
 
         <Pressable
           style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary }, pressed && styles.pressed]}
@@ -35,7 +37,7 @@ export default function PermissionSuccessScreen() {
             router.replace(role === 'barber' ? '/(barber)/dashboard' : '/(tabs)/home');
           }}
         >
-          <Text style={styles.primaryBtnText}>Go to Home</Text>
+          <Text style={styles.primaryBtnText}>{t('permissions.goToHome')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

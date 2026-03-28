@@ -25,6 +25,7 @@ QuickCut/
 - Expo (React Native + TypeScript)
 - Expo Router
 - Axios
+- i18n (French, English, Arabic)
 
 ## Prerequisites
 
@@ -147,6 +148,10 @@ npm run ios
 npm run web
 npm run lint
 ```
+
+Language support:
+- Mobile app supports `fr`, `en`, and `ar`.
+- Language can be changed from auth/profile UI and is persisted locally.
 
 ## API Notes
 

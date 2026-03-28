@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Pressable,
@@ -20,6 +21,7 @@ import { clientApi } from '@/services/client.api';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useAppColors();
   const { user } = useAuthContext();
 
@@ -109,8 +111,10 @@ export default function HomeScreen() {
               </Text>
             </View>
             <View>
-              <Text style={[styles.greeting, { color: colors.text }]}>Hello {user?.username || 'Client'}</Text>
-              <Text style={[styles.roleLabel, { color: colors.textMuted }]}>QuickCut Client</Text>
+              <Text style={[styles.greeting, { color: colors.text }]}>
+                {t('home.hello', { name: user?.username || t('auth.client') })}
+              </Text>
+              <Text style={[styles.roleLabel, { color: colors.textMuted }]}>{t('home.quickcutClient')}</Text>
             </View>
           </View>
           <Pressable
@@ -132,65 +136,67 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <Text style={[styles.pageTitle, { color: colors.text }]}>Client Dashboard</Text>
+        <Text style={[styles.pageTitle, { color: colors.text }]}>{t('home.clientDashboard')}</Text>
 
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}> 
             <Ionicons name="storefront-outline" size={22} color={colors.primary} />
             <Text style={[styles.statValue, { color: colors.text }]}>{barbers.length}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>BARBERS</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('home.barbers')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}> 
             <Ionicons name="calendar-outline" size={22} color={colors.primary} />
             <Text style={[styles.statValue, { color: colors.text }]}>{appointmentsCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.textMuted }]}>APPTS</Text>
+            <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('home.appts')}</Text>
           </View>
         </View>
 
         <View style={styles.queueCard}>
           <View style={styles.queueHeaderRow}>
-            <Text style={styles.queueTitle}>BOOKING STATUS</Text>
+            <Text style={styles.queueTitle}>{t('home.bookingStatus')}</Text>
             <View style={styles.liveDot} />
           </View>
           <View style={styles.queueBody}>
             <View style={styles.queueCol}>
-              <Text style={styles.queueSubLabel}>Unread Alerts</Text>
+              <Text style={styles.queueSubLabel}>{t('home.unreadAlerts')}</Text>
               <Text style={styles.queueName}>{unreadCount}</Text>
             </View>
             <View style={styles.queueVertDivider} />
             <View style={styles.queueCol}>
-              <Text style={styles.queueSubLabel}>Active Bookings</Text>
+              <Text style={styles.queueSubLabel}>{t('home.activeBookings')}</Text>
               <Text style={styles.queueName}>{activeBookings}</Text>
             </View>
           </View>
           <View style={styles.queueFooterRow}>
             <Ionicons name="heart-outline" size={14} color="#94A3B8" />
-            <Text style={styles.queueFooterText}>{'  '}Favorites: {favoriteSlots.length}</Text>
+            <Text style={styles.queueFooterText}>{'  '}{t('home.favoritesCount')}: {favoriteSlots.length}</Text>
             <View style={styles.queueFooterDot} />
             <Ionicons name="time-outline" size={14} color="#94A3B8" />
-            <Text style={styles.queueFooterText}>{'  '}Ready to book now</Text>
+            <Text style={styles.queueFooterText}>{'  '}{t('home.readyToBookNow')}</Text>
           </View>
         </View>
 
         {favoriteSlots.length ? (
           <View style={[styles.favoriteSlotsCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}> 
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Favorite Slots</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.favoriteSlots')}</Text>
               <Pressable onPress={() => router.push('/(tabs)/favorites')}>
-                <Text style={[styles.viewAll, { color: colors.primary }]}>Open favorites</Text>
+                <Text style={[styles.viewAll, { color: colors.primary }]}>{t('home.openFavorites')}</Text>
               </Pressable>
             </View>
             {favoriteSlots.slice(0, 2).map((group, index) => (
               <View key={`fav-${group.barber_id}-${index}`} style={styles.slotLine}>
                 <Text style={[styles.slotShop, { color: colors.text }]}>{group.shop_name}</Text>
-                <Text style={[styles.slotMeta, { color: colors.textMuted }]}>Slots: {Array.isArray(group.slots) ? group.slots.length : 0}</Text>
+                <Text style={[styles.slotMeta, { color: colors.textMuted }]}>
+                  Slots: {Array.isArray(group.slots) ? group.slots.length : 0}
+                </Text>
               </View>
             ))}
           </View>
         ) : null}
 
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.quickActions')}</Text>
         </View>
 
         <View style={styles.quickActionsGrid}>
@@ -201,8 +207,8 @@ export default function HomeScreen() {
             <View style={[styles.quickIconCircle, { backgroundColor: '#F6EFD8' }]}>
               <Ionicons name="search-outline" size={20} color={colors.primary} />
             </View>
-            <Text style={[styles.quickTitle, { color: colors.text }]}>Find Barbers</Text>
-            <Text style={[styles.quickText, { color: colors.textMuted }]}>Browse shops</Text>
+            <Text style={[styles.quickTitle, { color: colors.text }]}>{t('home.findBarbers')}</Text>
+            <Text style={[styles.quickText, { color: colors.textMuted }]}>{t('home.browseShops')}</Text>
           </Pressable>
 
           <Pressable
@@ -212,8 +218,8 @@ export default function HomeScreen() {
             <View style={[styles.quickIconCircle, { backgroundColor: '#F6EFD8' }]}>
               <Ionicons name="calendar-outline" size={20} color={colors.primary} />
             </View>
-            <Text style={[styles.quickTitle, { color: colors.text }]}>My Appointments</Text>
-            <Text style={[styles.quickText, { color: colors.textMuted }]}>Track bookings</Text>
+            <Text style={[styles.quickTitle, { color: colors.text }]}>{t('home.myAppointments')}</Text>
+            <Text style={[styles.quickText, { color: colors.textMuted }]}>{t('home.trackBookings')}</Text>
           </Pressable>
 
           <Pressable
@@ -223,8 +229,8 @@ export default function HomeScreen() {
             <View style={[styles.quickIconCircle, { backgroundColor: '#F6EFD8' }]}>
               <Ionicons name="heart-outline" size={20} color={colors.primary} />
             </View>
-            <Text style={[styles.quickTitle, { color: colors.text }]}>My Favorites</Text>
-            <Text style={[styles.quickText, { color: colors.textMuted }]}>Saved barbers</Text>
+            <Text style={[styles.quickTitle, { color: colors.text }]}>{t('home.myFavorites')}</Text>
+            <Text style={[styles.quickText, { color: colors.textMuted }]}>{t('home.savedBarbers')}</Text>
           </Pressable>
 
           <Pressable
@@ -234,15 +240,15 @@ export default function HomeScreen() {
             <View style={[styles.quickIconCircle, { backgroundColor: '#F6EFD8' }]}>
               <Ionicons name="notifications-outline" size={20} color={colors.primary} />
             </View>
-            <Text style={[styles.quickTitle, { color: colors.text }]}>Alerts</Text>
-            <Text style={[styles.quickText, { color: colors.textMuted }]}>Updates & reminders</Text>
+            <Text style={[styles.quickTitle, { color: colors.text }]}>{t('home.alerts')}</Text>
+            <Text style={[styles.quickText, { color: colors.textMuted }]}>{t('home.updatesAndReminders')}</Text>
           </Pressable>
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Popular Barbers</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.popularBarbers')}</Text>
           <Pressable onPress={() => router.push('/(tabs)/search')}>
-            <Text style={[styles.viewAll, { color: colors.primary }]}>View all</Text>
+            <Text style={[styles.viewAll, { color: colors.primary }]}>{t('home.viewAll')}</Text>
           </Pressable>
         </View>
 
@@ -251,7 +257,7 @@ export default function HomeScreen() {
         ) : barbers.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}>
             <Ionicons name="storefront-outline" size={34} color="#C8D3E0" />
-            <Text style={[styles.emptyTitle, { color: colors.textMuted }]}>No barbers available</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textMuted }]}>{t('home.noBarbersAvailable')}</Text>
           </View>
         ) : (
           popularBarbers.map((barber, index) => (
@@ -264,8 +270,10 @@ export default function HomeScreen() {
             >
               <Text style={[styles.barberName, { color: colors.text }]}>{barber.shop_name || `Barber #${barber.id}`}</Text>
               <View style={styles.barberRow}>
-                <Text style={[styles.barberMeta, { color: colors.textMuted }]}>Rating {Number(barber.rating || 0).toFixed(1)}</Text>
-                <Text style={[styles.quickLink, { color: colors.primary }]}>Book now</Text>
+                <Text style={[styles.barberMeta, { color: colors.textMuted }]}>
+                  {t('home.rating')} {Number(barber.rating || 0).toFixed(1)}
+                </Text>
+                <Text style={[styles.quickLink, { color: colors.primary }]}>{t('home.bookNow')}</Text>
               </View>
             </Pressable>
           ))

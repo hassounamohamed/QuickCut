@@ -1,10 +1,12 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from 'react-i18next';
 import {
 	Alert,
     Image,
     KeyboardAvoidingView,
+	Modal,
     Platform,
     Pressable,
     ScrollView,
@@ -16,12 +18,15 @@ import {
 import { AppTheme } from "@/constants/theme";
 import { registerUser, UserRole } from "@/services/auth";
 import { useAppColors } from '@/hooks/use-app-colors';
+import { useSettings } from '@/context/SettingsContext';
 
 const { colors } = AppTheme;
 
 export default function RegisterScreen() {
 	const router = useRouter();
+	const { t } = useTranslation();
 	const { colors } = useAppColors();
+	const { language, setLanguage } = useSettings();
 	const [email, setEmail] = useState("");
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
@@ -30,6 +35,13 @@ export default function RegisterScreen() {
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [languageSheetVisible, setLanguageSheetVisible] = useState(false);
+
+	const languageOptions = [
+		{ code: 'en', label: 'EN' },
+		{ code: 'fr', label: 'FR' },
+		{ code: 'ar', label: 'AR' },
+	] as const;
 
 	const toSimpleMessage = (error: unknown) => {
 		const message = error instanceof Error ? error.message.toLowerCase() : "";
@@ -63,12 +75,12 @@ export default function RegisterScreen() {
 		const trimmedUsername = username.trim();
 
 		if (!trimmedEmail || !trimmedUsername || !password || !confirmPassword) {
-			Alert.alert("Missing Fields", "Please complete all fields.");
+			Alert.alert(t('auth.missingFieldsTitle'), t('auth.loginMissingFieldsMessage'));
 			return;
 		}
 
 		if (passwordMismatch) {
-			Alert.alert("Password Mismatch", "Passwords do not match.");
+			Alert.alert(t('auth.passwordMismatchTitle'), t('auth.passwordMismatchMessage'));
 			return;
 		}
 
@@ -82,11 +94,11 @@ export default function RegisterScreen() {
 				role,
 			});
 
-			Alert.alert("Success", "Account created successfully.", [
-				{ text: "OK", onPress: () => router.back() },
+			Alert.alert(t('auth.registrationSuccessTitle'), t('auth.registrationSuccessMessage'), [
+				{ text: t('common.ok'), onPress: () => router.back() },
 			]);
 		} catch (error) {
-			Alert.alert("Registration Failed", toSimpleMessage(error));
+			Alert.alert(t('auth.registrationFailedTitle'), toSimpleMessage(error));
 		} finally {
 			setIsLoading(false);
 		}
@@ -108,13 +120,23 @@ export default function RegisterScreen() {
 				/>
 
 				<Text style={styles.heading}>
-					Create Your <Text style={styles.headingBlack}>Quick</Text>
-					<Text style={styles.headingGold}>Cut</Text> Account
+					{t('auth.createYourAccount')} <Text style={styles.headingBlack}>Quick</Text>
+					<Text style={styles.headingGold}>Cut</Text> {t('auth.accountSuffix')}
 				</Text>
+
+				<View style={styles.languageTopRight}>
+					<Pressable
+						style={[styles.languageIconBtn, { backgroundColor: colors.surface, borderColor: colors.divider }]}
+						onPress={() => setLanguageSheetVisible(true)}
+					>
+						<Ionicons name="language-outline" size={16} color={colors.primary} />
+						<Text style={[styles.languageCodeText, { color: colors.primary }]}>{language.toUpperCase()}</Text>
+					</Pressable>
+				</View>
 
 				<TextInput
 					style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.divider }]}
-					placeholder="Email"
+					placeholder={t('auth.email')}
 					placeholderTextColor="#aaa"
 					keyboardType="email-address"
 					autoCapitalize="none"
@@ -124,14 +146,14 @@ export default function RegisterScreen() {
 
 				<TextInput
 					style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.divider }]}
-					placeholder="Username"
+					placeholder={t('auth.username')}
 					placeholderTextColor="#aaa"
 					autoCapitalize="none"
 					value={username}
 					onChangeText={setUsername}
 				/>
 
-				<Text style={styles.roleLabel}>Select Role</Text>
+				<Text style={styles.roleLabel}>{t('auth.selectRole')}</Text>
 				<View style={styles.roleRow}>
 					<Pressable
 						style={[
@@ -144,7 +166,7 @@ export default function RegisterScreen() {
 						<Text
 							style={[styles.roleOptionText, role === "user" && styles.roleOptionTextActive]}
 						>
-							Client
+							{t('auth.client')}
 						</Text>
 					</Pressable>
 					<Pressable
@@ -161,7 +183,7 @@ export default function RegisterScreen() {
 								role === "barber" && styles.roleOptionTextActive,
 							]}
 						>
-							Barber
+							{t('auth.barber')}
 						</Text>
 					</Pressable>
 				</View>
@@ -169,7 +191,7 @@ export default function RegisterScreen() {
 				<View style={[styles.passwordWrapper, { backgroundColor: colors.surface, borderColor: colors.divider }]}> 
 					<TextInput
 						style={[styles.passwordInput, { color: colors.text }]}
-						placeholder="Password"
+						placeholder={t('auth.password')}
 						placeholderTextColor="#aaa"
 						secureTextEntry={!showPassword}
 						value={password}
@@ -196,7 +218,7 @@ export default function RegisterScreen() {
 				>
 					<TextInput
 						style={[styles.passwordInput, { color: colors.text }]}
-						placeholder="Confirm Password"
+						placeholder={t('auth.confirmPassword')}
 						placeholderTextColor="#aaa"
 						secureTextEntry={!showConfirmPassword}
 						value={confirmPassword}
@@ -215,7 +237,7 @@ export default function RegisterScreen() {
 				</View>
 
 				{passwordMismatch ? (
-					<Text style={styles.errorText}>Passwords do not match.</Text>
+					<Text style={styles.errorText}>{t('auth.passwordMismatchMessage')}</Text>
 				) : null}
 
 				<Pressable
@@ -230,7 +252,7 @@ export default function RegisterScreen() {
 					onPress={handleRegister}
 				>
 					<Text style={styles.btnPrimaryText}>
-						{isLoading ? "Creating Account..." : "Create Account"}
+						{isLoading ? t('auth.creatingAccount') : t('auth.createAccount')}
 					</Text>
 				</Pressable>
 
@@ -242,9 +264,49 @@ export default function RegisterScreen() {
 					]}
 					onPress={() => router.back()}
 				>
-					<Text style={[styles.btnSecondaryText, { color: colors.primary }]}>Back to Login</Text>
+					<Text style={[styles.btnSecondaryText, { color: colors.primary }]}>{t('auth.backToLogin')}</Text>
 				</Pressable>
 			</ScrollView>
+
+			<Modal
+				visible={languageSheetVisible}
+				transparent
+				animationType="slide"
+				onRequestClose={() => setLanguageSheetVisible(false)}
+			>
+				<Pressable style={styles.sheetBackdrop} onPress={() => setLanguageSheetVisible(false)}>
+					<Pressable
+						style={[styles.sheetCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}
+						onPress={(event) => event.stopPropagation()}
+					>
+						<View style={styles.sheetHandle} />
+						<Text style={[styles.sheetTitle, { color: colors.text }]}>{t('common.language')}</Text>
+
+						{languageOptions.map((item) => {
+							const active = language === item.code;
+							const title = item.code === 'en' ? t('common.english') : item.code === 'fr' ? t('common.french') : t('common.arabic');
+							return (
+								<Pressable
+									key={item.code}
+									style={[
+										styles.sheetItem,
+										{ borderColor: colors.divider, backgroundColor: active ? colors.primaryMuted : colors.background },
+									]}
+									onPress={() => {
+										if (!active) {
+											void setLanguage(item.code);
+										}
+										setLanguageSheetVisible(false);
+									}}
+								>
+									<Text style={[styles.sheetItemText, { color: colors.text }]}>{title}</Text>
+									{active ? <Ionicons name="checkmark-circle" size={18} color={colors.primary} /> : null}
+								</Pressable>
+							);
+						})}
+					</Pressable>
+				</Pressable>
+			</Modal>
 		</KeyboardAvoidingView>
 	);
 }
@@ -258,6 +320,67 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 28,
 		paddingVertical: 40,
 		backgroundColor: colors.background,
+	},
+	languageTopRight: {
+		width: "100%",
+		alignItems: "flex-start",
+		marginTop: -4,
+		marginBottom: 14,
+	},
+	languageIconBtn: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		minHeight: 34,
+		paddingHorizontal: 10,
+		borderWidth: 1,
+		borderRadius: 999,
+	},
+	languageCodeText: {
+		fontSize: 12,
+		fontWeight: '800',
+		letterSpacing: 0.3,
+	},
+	sheetBackdrop: {
+		flex: 1,
+		backgroundColor: 'rgba(0,0,0,0.35)',
+		justifyContent: 'flex-end',
+	},
+	sheetCard: {
+		borderTopLeftRadius: 20,
+		borderTopRightRadius: 20,
+		paddingHorizontal: 16,
+		paddingTop: 10,
+		paddingBottom: 24,
+		borderWidth: 1,
+		borderBottomWidth: 0,
+		gap: 10,
+	},
+	sheetHandle: {
+		alignSelf: 'center',
+		width: 44,
+		height: 5,
+		borderRadius: 999,
+		backgroundColor: '#C9CDD4',
+		marginBottom: 4,
+	},
+	sheetTitle: {
+		fontSize: 17,
+		fontWeight: '800',
+		marginBottom: 4,
+	},
+	sheetItem: {
+		minHeight: 48,
+		borderRadius: 12,
+		borderWidth: 1,
+		paddingHorizontal: 12,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+	},
+	sheetItemText: {
+		fontSize: 14,
+		fontWeight: '700',
 	},
 	title: {
 		fontSize: 24,

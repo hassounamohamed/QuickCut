@@ -1,5 +1,3 @@
-import asyncio
-
 from fastapi import HTTPException, status
 
 from app.core.expo_push import send_expo_push
@@ -21,10 +19,10 @@ class NotificationService:
         if not unique_ids:
             return
 
-        tasks = [self.notification_repository.create_bulk(unique_ids, title, body)]
+        # AsyncSession isn't concurrency-safe; persist and fetch/send push sequentially.
+        await self.notification_repository.create_bulk(unique_ids, title, body)
         if self.device_token_repository:
-            tasks.append(self._send_push_to_users(unique_ids, title, body))
-        await asyncio.gather(*tasks)
+            await self._send_push_to_users(unique_ids, title, body)
 
     async def notify_followers_new_slot(
         self,
@@ -50,11 +48,10 @@ class NotificationService:
             f"Barber {barber_name} added a new slot on {day_label} "
             f"from {start_time.strftime('%H:%M')} to {end_time.strftime('%H:%M')}"
         )
-        # Persist in-app notifications and fire push concurrently
-        tasks = [self.notification_repository.create_bulk(user_ids, title, body)]
+        # AsyncSession isn't concurrency-safe; persist and fetch/send push sequentially.
+        await self.notification_repository.create_bulk(user_ids, title, body)
         if self.device_token_repository:
-            tasks.append(self._send_push_to_users(user_ids, title, body))
-        await asyncio.gather(*tasks)
+            await self._send_push_to_users(user_ids, title, body)
 
     async def _send_push_to_users(self, user_ids: list[int], title: str, body: str) -> None:
         if not self.device_token_repository or not user_ids:

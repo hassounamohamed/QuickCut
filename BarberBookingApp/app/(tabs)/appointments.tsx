@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -21,15 +22,6 @@ import { clientApi } from '@/services/client.api';
 type FilterType = 'all' | 'active' | 'done' | 'cancelled';
 
 const cancellableStatuses = new Set(['pending', 'accepted']);
-
-function statusLabel(status: string) {
-  if (status === 'pending') return 'Pending Confirmation';
-  if (status === 'accepted') return 'Confirmed';
-  if (status === 'completed') return 'Completed';
-  if (status === 'cancelled_by_client') return 'Cancelled by You';
-  if (status === 'cancelled_by_barber') return 'Cancelled by Barber';
-  return 'Updated';
-}
 
 function formatDateLabel(value: string) {
   const date = new Date(`${value}T00:00:00`);
@@ -54,6 +46,7 @@ function formatTimeLabel(value: string) {
 }
 
 export default function AppointmentsScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppColors();
 
   const [items, setItems] = useState<Booking[]>([]);
@@ -115,10 +108,10 @@ export default function AppointmentsScreen() {
   }, [items, filter]);
 
   const onCancel = (reservationId: number) => {
-    Alert.alert('Cancel Appointment', 'Are you sure you want to cancel this appointment?', [
-      { text: 'No', style: 'cancel' },
+    Alert.alert(t('appointments.cancelTitle'), t('appointments.cancelMessage'), [
+      { text: t('appointments.no'), style: 'cancel' },
       {
-        text: 'Yes, Cancel',
+        text: t('appointments.yesCancel'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -127,8 +120,8 @@ export default function AppointmentsScreen() {
             await loadData();
           } catch (error: any) {
             const detail = error?.response?.data?.detail;
-            const message = typeof detail === 'string' ? detail : 'Could not cancel this reservation';
-            Alert.alert('Error', message);
+            const message = typeof detail === 'string' ? detail : t('appointments.couldNotCancel');
+            Alert.alert(t('appointments.errorTitle'), message);
           } finally {
             setCancellingId(null);
           }
@@ -153,14 +146,14 @@ export default function AppointmentsScreen() {
         rating: reviewRating,
         comment: reviewComment.trim() || undefined,
       });
-      Alert.alert('Thank you', 'Your review was submitted.');
+      Alert.alert(t('appointments.thankYouTitle'), t('appointments.reviewSubmitted'));
       setReviewReservationId(null);
       setReviewComment('');
       setReviewRating(5);
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
-      const message = typeof detail === 'string' ? detail : 'Could not submit review';
-      Alert.alert('Review Failed', message);
+      const message = typeof detail === 'string' ? detail : t('appointments.couldNotSubmitReview');
+      Alert.alert(t('appointments.reviewFailedTitle'), message);
     } finally {
       setReviewLoading(false);
     }
@@ -173,9 +166,9 @@ export default function AppointmentsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={[styles.headerCard, { backgroundColor: colors.primaryMuted, borderColor: colors.divider }]}>
-          <Text style={[styles.title, { color: colors.text }]}>My Appointments</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Track your pending, accepted, completed, and cancelled bookings.</Text>
-          <Text style={[styles.ratingHint, { color: colors.primary }]}>Rate barber is available after appointment status becomes COMPLETED.</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('appointments.myAppointments')}</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>{t('appointments.trackSubtitle')}</Text>
+          <Text style={[styles.ratingHint, { color: colors.primary }]}>{t('appointments.rateHint')}</Text>
         </View>
 
         <View style={styles.filters}>
@@ -194,7 +187,7 @@ export default function AppointmentsScreen() {
                 ]}
               >
                 <Text style={{ color: active ? colors.primary : colors.text, fontWeight: '700', fontSize: 12 }}>
-                  {value.toUpperCase()}
+                  {t(`appointments.filters.${value}`)}
                 </Text>
               </Pressable>
             );
@@ -205,7 +198,7 @@ export default function AppointmentsScreen() {
           <ActivityIndicator size="large" color={colors.primary} />
         ) : visibleItems.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}>
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No appointments found.</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('appointments.noAppointments')}</Text>
           </View>
         ) : (
           <View style={styles.list}>
@@ -215,8 +208,7 @@ export default function AppointmentsScreen() {
               const barberName =
                 barbersById[item.barber_id]?.shop_name ||
                 barbersById[item.barber_id]?.address ||
-                'Your Barber';
-              const friendlyStatus = statusLabel(item.status);
+                t('appointments.yourBarber');
 
               return (
                 <View
@@ -226,11 +218,11 @@ export default function AppointmentsScreen() {
                   <View style={styles.cardTop}>
                     <Text style={[styles.cardTitle, { color: colors.text }]}>{barberName}</Text>
                     <View style={[styles.statusPill, { backgroundColor: `${statusColor(item.status)}22` }]}>
-                      <Text style={[styles.status, { color: statusColor(item.status) }]}>{friendlyStatus}</Text>
+                      <Text style={[styles.status, { color: statusColor(item.status) }]}>{t(`appointments.status.${item.status}`)}</Text>
                     </View>
                   </View>
-                  <Text style={[styles.meta, { color: colors.textMuted }]}>Date: {formatDateLabel(item.booking_date)}</Text>
-                  <Text style={[styles.meta, { color: colors.textMuted }]}>Time: {formatTimeLabel(item.booking_time)}</Text>
+                  <Text style={[styles.meta, { color: colors.textMuted }]}>{t('appointments.date')}: {formatDateLabel(item.booking_date)}</Text>
+                  <Text style={[styles.meta, { color: colors.textMuted }]}>{t('appointments.time')}: {formatTimeLabel(item.booking_time)}</Text>
 
                   {canCancel ? (
                     <Pressable
@@ -239,7 +231,7 @@ export default function AppointmentsScreen() {
                       style={[styles.cancelBtn, { borderColor: colors.danger }]}
                     >
                       <Text style={[styles.cancelText, { color: colors.danger }]}>
-                        {isCancelling ? 'Cancelling...' : 'Cancel'}
+                        {isCancelling ? t('appointments.cancelling') : t('appointments.cancel')}
                       </Text>
                     </Pressable>
                   ) : null}
@@ -249,7 +241,7 @@ export default function AppointmentsScreen() {
                       style={[styles.reviewBtn, { borderColor: colors.primary, backgroundColor: colors.primaryMuted }]}
                       onPress={() => setReviewReservationId(item.id)}
                     >
-                      <Text style={[styles.reviewText, { color: colors.primary }]}>Leave Review</Text>
+                      <Text style={[styles.reviewText, { color: colors.primary }]}>{t('appointments.leaveReview')}</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -262,8 +254,8 @@ export default function AppointmentsScreen() {
       <Modal visible={reviewReservationId != null} transparent animationType="fade" onRequestClose={() => setReviewReservationId(null)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}> 
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Rate Your Appointment</Text>
-            <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Stars</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('appointments.rateYourAppointment')}</Text>
+            <Text style={[styles.modalLabel, { color: colors.textMuted }]}>{t('appointments.stars')}</Text>
             <View style={styles.ratingRow}>
               {[1, 2, 3, 4, 5].map((value) => {
                 const active = value <= reviewRating;
@@ -285,11 +277,11 @@ export default function AppointmentsScreen() {
               })}
             </View>
 
-            <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Comment (optional)</Text>
+            <Text style={[styles.modalLabel, { color: colors.textMuted }]}>{t('appointments.commentOptional')}</Text>
             <TextInput
               value={reviewComment}
               onChangeText={setReviewComment}
-              placeholder="Tell others about your experience"
+              placeholder={t('appointments.commentPlaceholder')}
               placeholderTextColor={colors.textMuted}
               style={[styles.commentInput, { color: colors.text, borderColor: colors.divider, backgroundColor: colors.background }]}
               multiline
@@ -297,14 +289,14 @@ export default function AppointmentsScreen() {
 
             <View style={styles.modalActions}>
               <Pressable style={[styles.modalBtn, { borderColor: colors.divider }]} onPress={() => setReviewReservationId(null)}>
-                <Text style={[styles.modalBtnText, { color: colors.textMuted }]}>Cancel</Text>
+                <Text style={[styles.modalBtnText, { color: colors.textMuted }]}>{t('appointments.cancel')}</Text>
               </Pressable>
               <Pressable
                 style={[styles.modalBtn, { borderColor: colors.primary, backgroundColor: colors.primaryMuted }]}
                 onPress={onSubmitReview}
                 disabled={reviewLoading}
               >
-                <Text style={[styles.modalBtnText, { color: colors.primary }]}>{reviewLoading ? 'Sending...' : 'Submit'}</Text>
+                <Text style={[styles.modalBtnText, { color: colors.primary }]}>{reviewLoading ? t('appointments.sending') : t('appointments.submit')}</Text>
               </Pressable>
             </View>
           </View>

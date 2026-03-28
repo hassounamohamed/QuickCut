@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -12,6 +13,7 @@ type Role = 'user' | 'barber';
 
 export default function PermissionWelcomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { darkMode, colors } = useAppColors();
   const params = useLocalSearchParams<{ role?: string }>();
   const role: Role = params.role === 'barber' ? 'barber' : 'user';
@@ -37,16 +39,16 @@ export default function PermissionWelcomeScreen() {
           </View>
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>Welcome 👋</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('permissions.welcomeTitle')} 👋</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          We need a few permissions to improve your experience.
+          {t('permissions.welcomeSubtitle')}
         </Text>
 
         <Pressable
           style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary }, pressed && styles.pressed]}
           onPress={() => router.push(`/(permissions)/photo?role=${role}` as any)}
         >
-          <Text style={styles.primaryBtnText}>Continue</Text>
+          <Text style={styles.primaryBtnText}>{t('common.continue')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

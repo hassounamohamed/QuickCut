@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -41,10 +42,10 @@ function badgeStyle(status: string) {
 }
 
 const QUICK_ACTIONS = [
-  { icon: 'add-circle-outline', label: 'Add Time Slot', route: '/(barber)/schedule' },
-  { icon: 'calendar', label: 'Manage Schedule', route: '/(barber)/schedule' },
-  { icon: 'qr-code-outline', label: 'Share QR Code', route: null },
-  { icon: 'star-outline', label: 'View Reviews', route: '/(barber)/reviews' },
+  { icon: 'add-circle-outline', key: 'addTimeSlot', route: '/(barber)/schedule' },
+  { icon: 'calendar', key: 'manageSchedule', route: '/(barber)/schedule' },
+  { icon: 'qr-code-outline', key: 'shareQrCode', route: null },
+  { icon: 'star-outline', key: 'viewReviews', route: '/(barber)/reviews' },
 ] as const;
 
 function initialFromName(name?: string | null): string {
@@ -54,6 +55,7 @@ function initialFromName(name?: string | null): string {
 
 export default function BarberDashboard() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { user } = useAuthContext();
   const { colors } = useAppColors();
   const GOLD = colors.primary;
@@ -88,15 +90,15 @@ export default function BarberDashboard() {
       const fileUri = await writeQrToCache();
       await Share.share({ message, url: fileUri ?? qrData.booking_link });
     } catch {
-      Alert.alert('Error', 'Could not share QR code');
+      Alert.alert(t('barberDashboard.errorTitle'), t('barberDashboard.couldNotShareQr'));
     } finally {
       setQrActionLoading(false);
     }
-  }, [qrData, writeQrToCache]);
+  }, [qrData, t, writeQrToCache]);
 
   const handleDownloadQr = useCallback(async () => {
     if (!qrData?.qr_png_base64) {
-      Alert.alert('QR Not Ready', 'QR image is not available yet. Please try again later.');
+      Alert.alert(t('barberDashboard.qrNotReadyTitle'), t('barberDashboard.qrNotReadyMessage'));
       return;
     }
 
@@ -104,25 +106,25 @@ export default function BarberDashboard() {
     try {
       const permission = await MediaLibrary.requestPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission Needed', 'Allow media access to save QR image to gallery.');
+        Alert.alert(t('barberDashboard.permissionNeededTitle'), t('barberDashboard.permissionNeededMessage'));
         return;
       }
 
       const fileUri = await writeQrToCache();
       if (!fileUri) {
-        Alert.alert('Error', 'Could not prepare image file');
+        Alert.alert(t('barberDashboard.errorTitle'), t('barberDashboard.couldNotPrepareImage'));
         return;
       }
 
       const asset = await MediaLibrary.createAssetAsync(fileUri);
       await MediaLibrary.createAlbumAsync('QuickCut', asset, false).catch(() => undefined);
-      Alert.alert('Saved', 'QR code saved to your gallery.');
+      Alert.alert(t('barberDashboard.savedTitle'), t('barberDashboard.qrSaved'));
     } catch {
-      Alert.alert('Error', 'Could not save QR code');
+      Alert.alert(t('barberDashboard.errorTitle'), t('barberDashboard.couldNotSaveQr'));
     } finally {
       setQrActionLoading(false);
     }
-  }, [qrData, writeQrToCache]);
+  }, [qrData, t, writeQrToCache]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -153,7 +155,7 @@ export default function BarberDashboard() {
       else await barberApi.cancelReservation(reservationId);
       fetchData();
     } catch {
-      Alert.alert('Error', 'Could not update reservation. Please try again.');
+      Alert.alert(t('barberDashboard.errorTitle'), t('barberDashboard.couldNotUpdateReservation'));
     }
   };
 
@@ -165,7 +167,7 @@ export default function BarberDashboard() {
       setQrData(data);
       setQrModal(true);
     } catch {
-      Alert.alert('Error', 'Could not generate QR code');
+      Alert.alert(t('barberDashboard.errorTitle'), t('barberDashboard.couldNotGenerateQr'));
     } finally {
       setQrLoading(false);
     }
@@ -207,8 +209,8 @@ export default function BarberDashboard() {
               <Text style={styles.avatarText}>{firstName[0].toUpperCase()}</Text>
             </View>
             <View>
-              <Text style={[styles.greeting, { color: colors.text }]}>Hello {firstName} 👋</Text>
-              <Text style={[styles.roleLabel, { color: colors.textMuted }]}>Professional Barber</Text>
+              <Text style={[styles.greeting, { color: colors.text }]}>{t('barberDashboard.hello', { name: firstName })} 👋</Text>
+              <Text style={[styles.roleLabel, { color: colors.textMuted }]}>{t('barberDashboard.professionalBarber')}</Text>
             </View>
           </View>
           <View style={styles.headerIcons}>
@@ -227,38 +229,38 @@ export default function BarberDashboard() {
           </View>
         </View>
 
-        <Text style={[styles.pageTitle, { color: colors.text }]}>Barber Dashboard</Text>
+        <Text style={[styles.pageTitle, { color: colors.text }]}>{t('barberDashboard.title')}</Text>
 
         {/* ─── Stats row ─── */}
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
             <Ionicons name="calendar-outline" size={22} color={GOLD} />
             <Text style={styles.statValue}>{dashboard?.total_reservations ?? 0}</Text>
-            <Text style={styles.statLabel}>APPTS</Text>
+            <Text style={styles.statLabel}>{t('barberDashboard.appts')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
             <Ionicons name="star-outline" size={22} color={GOLD} />
             <Text style={styles.statValue}>{rating > 0 ? rating.toFixed(1) : '—'}</Text>
-            <Text style={styles.statLabel}>RATING</Text>
+            <Text style={styles.statLabel}>{t('barberDashboard.rating')}</Text>
           </View>
         </View>
 
         {/* ─── Live Queue card ─── */}
         <View style={styles.queueCard}>
           <View style={styles.queueHeaderRow}>
-            <Text style={styles.queueTitle}>LIVE QUEUE</Text>
+            <Text style={styles.queueTitle}>{t('barberDashboard.liveQueue')}</Text>
             <View style={styles.liveDot} />
           </View>
           <View style={styles.queueBody}>
             <View style={styles.queueCol}>
-              <Text style={styles.queueSubLabel}>Now Serving</Text>
+              <Text style={styles.queueSubLabel}>{t('barberDashboard.nowServing')}</Text>
               <Text style={styles.queueName}>
                 {nowServing ? nowServing.client_name?.trim() || `Client ${nowServing.client_id}` : '—'}
               </Text>
             </View>
             <View style={styles.queueVertDivider} />
             <View style={styles.queueCol}>
-              <Text style={styles.queueSubLabel}>Next Client</Text>
+              <Text style={styles.queueSubLabel}>{t('barberDashboard.nextClient')}</Text>
               <Text style={styles.queueName}>
                 {nextClient ? nextClient.client_name?.trim() || `Client ${nextClient.client_id}` : '—'}
               </Text>
@@ -267,12 +269,12 @@ export default function BarberDashboard() {
           <View style={styles.queueFooterRow}>
             <Ionicons name="people-outline" size={14} color="#94A3B8" />
             <Text style={styles.queueFooterText}>
-              {'  '}Waiting: {queue?.waiting_count ?? 0} clients
+              {'  '}{t('barberDashboard.waiting')}: {queue?.waiting_count ?? 0} {t('barberDashboard.clients')}
             </Text>
             <View style={styles.queueFooterDot} />
             <Ionicons name="time-outline" size={14} color="#94A3B8" />
             <Text style={styles.queueFooterText}>
-              {'  '}Est. {(queue?.waiting_count ?? 0) * 20} min
+              {'  '}{t('barberDashboard.estimated')} {(queue?.waiting_count ?? 0) * 20} {t('barberDashboard.min')}
             </Text>
           </View>
         </View>
@@ -280,16 +282,16 @@ export default function BarberDashboard() {
         {/* ─── Today's Appointments ─── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>{"Today's Appointments"}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('barberDashboard.todaysAppointments')}</Text>
             <TouchableOpacity onPress={() => router.push('/(barber)/appointments')}>
-              <Text style={styles.viewAll}>View All</Text>
+              <Text style={styles.viewAll}>{t('barberDashboard.viewAll')}</Text>
             </TouchableOpacity>
           </View>
 
           {!dashboard?.schedule.length ? (
             <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
               <Ionicons name="calendar-outline" size={32} color="#CBD5E0" />
-              <Text style={styles.emptyText}>No appointments today</Text>
+              <Text style={styles.emptyText}>{t('barberDashboard.noAppointmentsToday')}</Text>
             </View>
           ) : (
             dashboard.schedule.slice(0, 4).map((item) => {
@@ -307,7 +309,7 @@ export default function BarberDashboard() {
                       <Text style={[styles.apptTime, { color: colors.textMuted }]}> {item.booking_time.slice(0, 5)}</Text>
                       <View style={[styles.badge, { backgroundColor: badge.bg }]}>
                         <Text style={[styles.badgeText, { color: badge.text }]}>
-                          {item.status === 'pending' ? 'WAITING' : item.status.toUpperCase()}
+                          {item.status === 'pending' ? t('barberDashboard.waitingUpper') : item.status.toUpperCase()}
                         </Text>
                       </View>
                     </View>
@@ -336,11 +338,11 @@ export default function BarberDashboard() {
 
         {/* ─── Quick Actions ─── */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.quickActions')}</Text>
           <View style={styles.actionsGrid}>
-            {QUICK_ACTIONS.map(({ icon, label, route }) => (
+            {QUICK_ACTIONS.map(({ icon, key, route }) => (
               <TouchableOpacity
-                key={label}
+                key={key}
                 style={[styles.actionCard, { backgroundColor: colors.surface }]}
                 activeOpacity={0.7}
                 onPress={() => {
@@ -354,7 +356,7 @@ export default function BarberDashboard() {
                 <View style={styles.actionIconCircle}>
                   <Ionicons name={icon as any} size={26} color={GOLD} />
                 </View>
-                <Text style={[styles.actionLabel, { color: colors.text }]}>{label}</Text>
+                <Text style={[styles.actionLabel, { color: colors.text }]}>{t(`barberDashboard.actions.${key}`)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -365,7 +367,7 @@ export default function BarberDashboard() {
       <Modal visible={qrModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Scan to Book</Text>
+            <Text style={styles.modalTitle}>{t('barberDashboard.scanToBook')}</Text>
             {qrData?.qr_png_base64 ? (
               <Image
                 source={{ uri: `data:image/png;base64,${qrData.qr_png_base64}` }}
@@ -387,7 +389,7 @@ export default function BarberDashboard() {
                 disabled={qrActionLoading}
               >
                 <Ionicons name="share-social-outline" size={18} color={GOLD} />
-                <Text style={styles.qrActionSecondaryText}>Share</Text>
+                <Text style={styles.qrActionSecondaryText}>{t('barberDashboard.share')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.qrActionBtn, styles.qrActionPrimary]}
@@ -395,11 +397,11 @@ export default function BarberDashboard() {
                 disabled={qrActionLoading}
               >
                 <Ionicons name="download-outline" size={18} color="#FFFFFF" />
-                <Text style={styles.qrActionPrimaryText}>Download</Text>
+                <Text style={styles.qrActionPrimaryText}>{t('barberDashboard.download')}</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setQrModal(false)}>
-              <Text style={styles.modalCloseBtnText}>Close</Text>
+              <Text style={styles.modalCloseBtnText}>{t('barberDashboard.close')}</Text>
             </TouchableOpacity>
           </View>
         </View>

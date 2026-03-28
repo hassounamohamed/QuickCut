@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useTranslation } from 'react-i18next';
 import { View } from "react-native";
 import { BottomAdBanner } from '@/components/ads/BottomAdBanner';
 import { useAppColors } from '@/hooks/use-app-colors';
 
 export default function TabsLayout() {
   const { colors } = useAppColors();
+  const { t } = useTranslation();
 
   return (
     <View style={{ flex: 1 }}>
@@ -31,7 +33,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            title: "Home",
+            title: t('nav.home'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="home-outline" size={size} color={color} />
             ),
@@ -40,7 +42,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="search"
           options={{
-            title: "Search",
+            title: t('nav.search'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="search-outline" size={size} color={color} />
             ),
@@ -49,7 +51,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="appointments"
           options={{
-            title: "Appointments",
+            title: t('nav.appointments'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="calendar-outline" size={size} color={color} />
             ),
@@ -58,7 +60,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="favorites"
           options={{
-            title: "Favorites",
+            title: t('nav.favorites'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="heart-outline" size={size} color={color} />
             ),
@@ -67,7 +69,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: "Profile",
+            title: t('nav.profile'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="person-outline" size={size} color={color} />
             ),
@@ -77,7 +79,7 @@ export default function TabsLayout() {
           name="notifications"
           options={{
             href: null,
-            title: 'Notifications',
+            title: t('nav.notifications'),
           }}
         />
       </Tabs>

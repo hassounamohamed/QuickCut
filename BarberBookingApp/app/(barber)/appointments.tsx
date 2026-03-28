@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -42,9 +43,9 @@ function offsetDate(offset: number): string {
 
 function displayLabel(dateStr: string): string {
   const today = offsetDate(0);
-  if (dateStr === today) return 'Today';
-  if (dateStr === offsetDate(-1)) return 'Yesterday';
-  if (dateStr === offsetDate(1)) return 'Tomorrow';
+  if (dateStr === today) return 'TODAY';
+  if (dateStr === offsetDate(-1)) return 'YESTERDAY';
+  if (dateStr === offsetDate(1)) return 'TOMORROW';
   return new Date(dateStr).toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -58,6 +59,7 @@ function initialFromName(name?: string | null): string {
 }
 
 export default function AppointmentsScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppColors();
   const GOLD = colors.primary;
   const BG = colors.background;
@@ -93,7 +95,7 @@ export default function AppointmentsScreen() {
       else await barberApi.completeReservation(id);
       fetchData();
     } catch {
-      Alert.alert('Error', 'Could not update reservation. Please try again.');
+      Alert.alert(t('barberAppointments.errorTitle'), t('barberAppointments.updateFailed'));
     }
   };
 
@@ -105,7 +107,7 @@ export default function AppointmentsScreen() {
           <Ionicons name="chevron-back" size={22} color={DARK} />
         </TouchableOpacity>
         <View style={styles.dateCenter}>
-          <Text style={[styles.datePrimary, { color: DARK }]}>{displayLabel(targetDate)}</Text>
+          <Text style={[styles.datePrimary, { color: DARK }]}>{t(`barberAppointments.dayLabel.${displayLabel(targetDate)}`)}</Text>
           <Text style={[styles.dateSub, { color: colors.textMuted }]}>{targetDate}</Text>
         </View>
         <TouchableOpacity style={styles.navBtn} onPress={() => setDayOffset((v) => v + 1)}>
@@ -136,9 +138,9 @@ export default function AppointmentsScreen() {
           {/* Summary strip */}
           <View style={styles.summaryRow}>
             {[
-              { label: 'Total', value: data?.total_reservations ?? 0, color: DARK },
-              { label: 'Pending', value: data?.pending_reservations ?? 0, color: '#E65100' },
-              { label: 'Accepted', value: data?.accepted_reservations ?? 0, color: '#2D6A4F' },
+              { label: t('barberAppointments.total'), value: data?.total_reservations ?? 0, color: DARK },
+              { label: t('barberAppointments.pending'), value: data?.pending_reservations ?? 0, color: '#E65100' },
+              { label: t('barberAppointments.accepted'), value: data?.accepted_reservations ?? 0, color: '#2D6A4F' },
             ].map(({ label, value, color }) => (
               <View key={label} style={[styles.summaryChip, { backgroundColor: colors.surface }]}> 
                 <Text style={[styles.summaryNum, { color }]}>{value}</Text>
@@ -150,8 +152,8 @@ export default function AppointmentsScreen() {
           {!data?.schedule.length ? (
             <View style={styles.emptyBox}>
               <Ionicons name="calendar-outline" size={52} color="#CBD5E0" />
-              <Text style={styles.emptyTitle}>No appointments</Text>
-              <Text style={styles.emptySub}>Nothing scheduled for this day</Text>
+              <Text style={styles.emptyTitle}>{t('barberAppointments.noAppointments')}</Text>
+              <Text style={styles.emptySub}>{t('barberAppointments.nothingScheduled')}</Text>
             </View>
           ) : (
             data.schedule.map((item) => {
@@ -170,7 +172,7 @@ export default function AppointmentsScreen() {
                       <View style={[styles.badge, { backgroundColor: badge.bg }]}>
                         <Text style={[styles.badgeText, { color: badge.text }]}>
                           {item.status === 'pending'
-                            ? 'WAITING'
+                            ? t('barberAppointments.waiting')
                             : item.status.replace(/_by_\w+/, '').toUpperCase()}
                         </Text>
                       </View>
@@ -198,7 +200,7 @@ export default function AppointmentsScreen() {
                         style={styles.pillGold}
                         onPress={() => handleAction(item.reservation_id, 'complete')}
                       >
-                        <Text style={styles.pillGoldText}>Done</Text>
+                        <Text style={styles.pillGoldText}>{t('barberAppointments.done')}</Text>
                       </TouchableOpacity>
                     )}
                   </View>

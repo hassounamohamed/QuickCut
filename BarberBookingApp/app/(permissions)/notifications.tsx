@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -13,6 +14,7 @@ type Role = 'user' | 'barber';
 
 export default function NotificationPermissionScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useAppColors();
   const params = useLocalSearchParams<{ role?: string }>();
   const role: Role = params.role === 'barber' ? 'barber' : 'user';
@@ -25,8 +27,8 @@ export default function NotificationPermissionScreen() {
     try {
       if (isExpoGo) {
         Alert.alert(
-          'Expo Go Limitation',
-          'Notifications require a development build. You can continue and enable it later.',
+          t('permissions.expoGoLimitationTitle'),
+          t('permissions.expoGoLimitationMessage'),
         );
         goNext();
         return;
@@ -35,7 +37,10 @@ export default function NotificationPermissionScreen() {
       const Notifications = await import('expo-notifications');
       const result = await Notifications.requestPermissionsAsync();
       if (!result.granted && result.canAskAgain === false) {
-        Alert.alert('Permission Blocked', 'You can enable notifications later in Settings.');
+        Alert.alert(
+          t('permissions.permissionBlockedTitle'),
+          t('permissions.notificationsPermissionBlockedMessage'),
+        );
       }
       goNext();
     } catch {
@@ -50,17 +55,17 @@ export default function NotificationPermissionScreen() {
           <Ionicons name="notifications-outline" size={56} color={colors.primary} />
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>Stay updated 🔔</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('permissions.notificationsTitle')} 🔔</Text>
         <Text style={[styles.description, { color: colors.textMuted }]}>
-          Get reminders for your appointments and updates from your barber.
+          {t('permissions.notificationsDescription')}
         </Text>
 
         <Pressable style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary }, pressed && styles.pressed]} onPress={handleEnable}>
-          <Text style={styles.primaryBtnText}>Enable Notifications</Text>
+          <Text style={styles.primaryBtnText}>{t('permissions.enableNotifications')}</Text>
         </Pressable>
 
         <Pressable style={({ pressed }) => [styles.ghostBtn, { backgroundColor: colors.surface, borderColor: colors.divider }, pressed && styles.pressed]} onPress={goNext}>
-          <Text style={[styles.ghostBtnText, { color: colors.textMuted }]}>Later</Text>
+          <Text style={[styles.ghostBtnText, { color: colors.textMuted }]}>{t('common.later')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

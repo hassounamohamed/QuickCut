@@ -2,6 +2,14 @@
 
 React Native + Expo Router app for clients and barbers.
 
+## Language support (i18n)
+- The app now supports 3 languages:
+   - French (fr)
+   - English (en)
+   - Arabic (ar)
+- Users can change language from the auth screens and profile settings.
+- Selected language is persisted in local settings and reused on next app launch.
+
 ## Local development
 1. Install dependencies:
    - `npm install`

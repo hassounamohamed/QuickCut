@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -21,11 +22,12 @@ import { barberApi, AvailabilitySlot } from '@/services/barber.api';
 const GOLD = AppTheme.colors.primary;
 const DARK = AppTheme.colors.text;
 
-const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAYS_FULL = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+const DAYS_SHORT = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export default function ScheduleScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppColors();
   const GOLD = colors.primary;
   const BG = colors.background;
@@ -70,12 +72,12 @@ export default function ScheduleScreen() {
       const data = await barberApi.listAvailability(mine.id);
       setSlots(data);
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.detail ?? 'Could not load working hours');
+      Alert.alert(t('barberSchedule.errorTitle'), e?.response?.data?.detail ?? t('barberSchedule.couldNotLoad'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user?.id]);
+  }, [t, user?.id]);
 
   useEffect(() => {
     loadData();
@@ -83,20 +85,20 @@ export default function ScheduleScreen() {
 
   const handleAdd = async () => {
     if (!barberId) {
-      Alert.alert('Setup Required', 'Barber profile not found. Please pull to refresh and try again.');
+      Alert.alert(t('barberSchedule.setupRequiredTitle'), t('barberSchedule.setupRequiredMessage'));
       return;
     }
     if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
-      Alert.alert('Invalid time', 'Use HH:MM format — e.g. 09:00');
+      Alert.alert(t('barberSchedule.invalidTimeTitle'), t('barberSchedule.invalidTimeMessage'));
       return;
     }
     if (startTime >= endTime) {
-      Alert.alert('Invalid range', 'Start time must be before end time');
+      Alert.alert(t('barberSchedule.invalidRangeTitle'), t('barberSchedule.invalidRangeMessage'));
       return;
     }
     const minutes = Number(slotMinutes);
     if (!Number.isInteger(minutes) || minutes < 15 || minutes > 180) {
-      Alert.alert('Invalid interval', 'Slot interval must be between 15 and 180 minutes');
+      Alert.alert(t('barberSchedule.invalidIntervalTitle'), t('barberSchedule.invalidIntervalMessage'));
       return;
     }
     try {
@@ -110,24 +112,24 @@ export default function ScheduleScreen() {
       });
       await loadData();
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.detail ?? 'Could not add slot');
+      Alert.alert(t('barberSchedule.errorTitle'), e?.response?.data?.detail ?? t('barberSchedule.couldNotAddSlot'));
     } finally {
       setAdding(false);
     }
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert('Remove Slot', 'Delete this availability slot?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('barberSchedule.removeSlotTitle'), t('barberSchedule.removeSlotMessage'), [
+      { text: t('appointments.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('barberSchedule.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await barberApi.deleteAvailability(id);
             await loadData();
           } catch {
-            Alert.alert('Error', 'Could not delete slot');
+            Alert.alert(t('barberSchedule.errorTitle'), t('barberSchedule.couldNotDeleteSlot'));
           }
         },
       },
@@ -156,11 +158,11 @@ export default function ScheduleScreen() {
           />
         }
       >
-        <Text style={[styles.pageTitle, { color: DARK }]}>Working Hours</Text>
+        <Text style={[styles.pageTitle, { color: DARK }]}>{t('barberSchedule.workingHours')}</Text>
 
         {/* ─── Add-slot form ─── */}
         <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}>
-          <Text style={[styles.formTitle, { color: DARK }]}>Add Availability Slot</Text>
+          <Text style={[styles.formTitle, { color: DARK }]}>{t('barberSchedule.addAvailabilitySlot')}</Text>
 
           {/* Day picker */}
           <ScrollView
@@ -180,7 +182,7 @@ export default function ScheduleScreen() {
                 onPress={() => setSelectedDay(i)}
               >
                 <Text style={[styles.dayChipText, selectedDay === i && styles.dayChipTextActive]}>
-                  {d}
+                  {t(`barberSchedule.daysShort.${d}`)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -189,7 +191,7 @@ export default function ScheduleScreen() {
           {/* Time inputs */}
           <View style={styles.timeRow}>
             <View style={styles.timeField}>
-              <Text style={[styles.timeLabel, { color: colors.textMuted }]}>From</Text>
+              <Text style={[styles.timeLabel, { color: colors.textMuted }]}>{t('barberSchedule.from')}</Text>
               <TextInput
                 style={[styles.timeInput, { backgroundColor: colors.surface, borderColor: colors.divider, color: DARK }]}
                 value={startTime}
@@ -207,7 +209,7 @@ export default function ScheduleScreen() {
               style={{ marginTop: 26 }}
             />
             <View style={styles.timeField}>
-              <Text style={[styles.timeLabel, { color: colors.textMuted }]}>To</Text>
+              <Text style={[styles.timeLabel, { color: colors.textMuted }]}>{t('barberSchedule.to')}</Text>
               <TextInput
                 style={[styles.timeInput, { backgroundColor: colors.surface, borderColor: colors.divider, color: DARK }]}
                 value={endTime}
@@ -221,7 +223,7 @@ export default function ScheduleScreen() {
           </View>
 
           <View style={styles.intervalField}>
-            <Text style={[styles.timeLabel, { color: colors.textMuted }]}>Interval (minutes)</Text>
+            <Text style={[styles.timeLabel, { color: colors.textMuted }]}>{t('barberSchedule.intervalMinutes')}</Text>
             <TextInput
               style={[styles.timeInput, { backgroundColor: colors.surface, borderColor: colors.divider, color: DARK }]}
               value={slotMinutes}
@@ -239,19 +241,19 @@ export default function ScheduleScreen() {
             disabled={adding}
           >
             <Ionicons name="add" size={18} color="#fff" />
-            <Text style={styles.addBtnText}>{adding ? 'Adding…' : 'Add Slot'}</Text>
+            <Text style={styles.addBtnText}>{adding ? t('barberSchedule.adding') : t('barberSchedule.addSlot')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* ─── Current schedule ─── */}
-        <Text style={[styles.slotsSectionTitle, { color: DARK }]}>Current Schedule</Text>
+        <Text style={[styles.slotsSectionTitle, { color: DARK }]}>{t('barberSchedule.currentSchedule')}</Text>
 
         {loading ? (
           <ActivityIndicator color={GOLD} style={{ marginTop: 24 }} />
         ) : slots.length === 0 ? (
           <View style={styles.emptyBox}>
             <Ionicons name="time-outline" size={44} color="#CBD5E0" />
-            <Text style={styles.emptyText}>No slots added yet</Text>
+            <Text style={styles.emptyText}>{t('barberSchedule.noSlotsYet')}</Text>
           </View>
         ) : (
           [0, 1, 2, 3, 4, 5, 6].map((day) => {
@@ -259,7 +261,7 @@ export default function ScheduleScreen() {
             if (!daySlots) return null;
             return (
               <View key={day} style={[styles.dayGroup, { backgroundColor: colors.surface }]}> 
-                <Text style={[styles.dayGroupLabel, { color: colors.textMuted }]}>{DAYS_FULL[day]}</Text>
+                <Text style={[styles.dayGroupLabel, { color: colors.textMuted }]}>{t(`barberSchedule.daysFull.${DAYS_FULL[day]}`)}</Text>
                 {daySlots.map((slot, idx) => (
                   <View
                     key={slot.id}

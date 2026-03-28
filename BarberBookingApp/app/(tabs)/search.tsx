@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -58,6 +59,7 @@ function backendDayOfWeek(dateValue: Date) {
 
 export default function SearchScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useAppColors();
   const { barber_id } = useLocalSearchParams<{ barber_id?: string }>();
   const scrollRef = useRef<ScrollView | null>(null);
@@ -235,7 +237,7 @@ export default function SearchScreen() {
         setFavoriteOrder((prev) => (prev.includes(barberId) ? prev : [...prev, barberId]));
       }
     } catch {
-      Alert.alert('Favorites', 'Could not update favorites right now.');
+      Alert.alert(t('search.favoritesTitle'), t('search.favoritesUpdateFailed'));
     } finally {
       setFavoriteBusyIds((prev) => {
         const next = new Set(prev);
@@ -264,8 +266,8 @@ export default function SearchScreen() {
         booking_date: selectedDate,
         booking_time: `${slot}:00`,
       });
-      Alert.alert('Booked', 'Your reservation was created successfully.', [
-        { text: 'OK', onPress: () => router.push('/(tabs)/appointments') },
+      Alert.alert(t('search.bookedTitle'), t('search.bookedMessage'), [
+        { text: t('common.ok'), onPress: () => router.push('/(tabs)/appointments') },
       ]);
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
@@ -274,8 +276,8 @@ export default function SearchScreen() {
           ? detail
           : Array.isArray(detail) && detail.length > 0
             ? String(detail[0]?.msg || detail[0])
-            : 'Could not create reservation';
-      Alert.alert('Booking Failed', message);
+            : t('search.createReservationFailed');
+          Alert.alert(t('search.bookingFailedTitle'), message);
     } finally {
       setBooking(false);
     }
@@ -297,19 +299,19 @@ export default function SearchScreen() {
         : null;
 
     if (!url) {
-      Alert.alert('Location', 'No location available for this barber yet.');
+      Alert.alert(t('search.locationTitle'), t('search.noLocationYet'));
       return;
     }
 
     try {
       const supported = await Linking.canOpenURL(url);
       if (!supported) {
-        Alert.alert('Location', 'Could not open map on this device.');
+        Alert.alert(t('search.locationTitle'), t('search.couldNotOpenMapDevice'));
         return;
       }
       await Linking.openURL(url);
     } catch {
-      Alert.alert('Location', 'Could not open map right now.');
+      Alert.alert(t('search.locationTitle'), t('search.couldNotOpenMapNow'));
     }
   };
 
@@ -322,12 +324,12 @@ export default function SearchScreen() {
       >
         
 
-        <Text style={[styles.pageTitle, { color: colors.text }]}>Search</Text>
+        <Text style={[styles.pageTitle, { color: colors.text }]}>{t('search.title')}</Text>
 
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search by shop or address"
+          placeholder={t('search.placeholder')}
           placeholderTextColor={colors.textMuted}
           style={[styles.searchInput, { color: colors.text, borderColor: colors.divider, backgroundColor: colors.surface }]}
         />
@@ -336,7 +338,7 @@ export default function SearchScreen() {
           <ActivityIndicator size="large" color={colors.primary} />
         ) : filteredBarbers.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}>
-            <Text style={[styles.emptyTitle, { color: colors.textMuted }]}>No barber matches this search</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textMuted }]}>{t('search.noMatches')}</Text>
           </View>
         ) : (
           <View style={styles.list}>
@@ -372,14 +374,14 @@ export default function SearchScreen() {
                       ]}
                     >
                       <Text style={[styles.favoriteChipText, { color: isFavorite ? colors.primary : colors.textMuted }]}>
-                        {isBusy ? '...' : isFavorite ? 'Favorited' : 'Favorite'}
+                        {isBusy ? '...' : isFavorite ? t('search.favorited') : t('search.favorite')}
                       </Text>
                     </Pressable>
                   </View>
-                  <Text style={[styles.cardMeta, { color: colors.textMuted }]}>{item.address || 'No address provided'}</Text>
+                  <Text style={[styles.cardMeta, { color: colors.textMuted }]}>{item.address || t('search.noAddress')}</Text>
                   <View style={styles.rowMeta}>
-                    <Text style={[styles.cardMeta, { color: colors.textMuted }]}>Rating {Number(item.rating || 0).toFixed(1)}</Text>
-                    {selected ? <Text style={[styles.selectedTag, { color: colors.primary }]}>Selected</Text> : null}
+                    <Text style={[styles.cardMeta, { color: colors.textMuted }]}>{t('search.rating')} {Number(item.rating || 0).toFixed(1)}</Text>
+                    {selected ? <Text style={[styles.selectedTag, { color: colors.primary }]}>{t('search.selected')}</Text> : null}
                   </View>
                 </Pressable>
               );
@@ -389,7 +391,9 @@ export default function SearchScreen() {
 
         {selectedBarber ? (
           <View style={[styles.bookingCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}> 
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Book with {selectedBarber.shop_name || `Barber #${selectedBarber.id}`}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              {t('search.bookWith')} {selectedBarber.shop_name || `Barber #${selectedBarber.id}`}
+            </Text>
 
             <View
               onLayout={(event) => {
@@ -397,16 +401,16 @@ export default function SearchScreen() {
               }}
               style={[styles.profileCard, { backgroundColor: colors.background, borderColor: colors.divider }]}
             > 
-              <Text style={[styles.profileTitle, { color: colors.text }]}>Barber Profile</Text>
-              <Text style={[styles.profileMeta, { color: colors.textMuted }]}>Rating: {Number(selectedBarber.rating || 0).toFixed(1)}</Text>
+              <Text style={[styles.profileTitle, { color: colors.text }]}>{t('search.barberProfile')}</Text>
+              <Text style={[styles.profileMeta, { color: colors.textMuted }]}>{t('search.rating')}: {Number(selectedBarber.rating || 0).toFixed(1)}</Text>
               <Text style={[styles.profileMeta, { color: colors.textMuted }]}>
-                Address: {selectedBarber.address || 'No address provided'}
+                {t('search.address')}: {selectedBarber.address || t('search.noAddress')}
               </Text>
               <Pressable
                 onPress={openMap}
                 style={[styles.mapBtn, { borderColor: colors.primary, backgroundColor: colors.primaryMuted }]}
               >
-                <Text style={[styles.mapBtnText, { color: colors.primary }]}>Open Location in Google Maps</Text>
+                <Text style={[styles.mapBtnText, { color: colors.primary }]}>{t('search.openInGoogleMaps')}</Text>
               </Pressable>
 
               {Array.isArray(selectedBarber.photos) && selectedBarber.photos.length > 0 ? (
@@ -421,11 +425,11 @@ export default function SearchScreen() {
                   ))}
                 </ScrollView>
               ) : (
-                <Text style={[styles.profileMeta, { color: colors.textMuted }]}>No photos yet.</Text>
+                <Text style={[styles.profileMeta, { color: colors.textMuted }]}>{t('search.noPhotosYet')}</Text>
               )}
             </View>
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>Date (YYYY-MM-DD)</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>{t('search.dateLabel')}</Text>
             <TextInput
               value={selectedDate}
               onChangeText={setSelectedDate}
@@ -437,7 +441,7 @@ export default function SearchScreen() {
             {slotsLoading ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : slotsForDate.length === 0 ? (
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No availability slots for selected day.</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('search.noSlotsForDay')}</Text>
             ) : (
               <View style={styles.slotWrap}>
                 {slotsForDate.map((slot) => (
@@ -447,7 +451,7 @@ export default function SearchScreen() {
                     disabled={booking}
                     style={[styles.slotBtn, { backgroundColor: colors.primaryMuted, borderColor: colors.primary }]}
                   >
-                    <Text style={[styles.slotText, { color: colors.primary }]}>{booking ? 'Booking...' : slot}</Text>
+                    <Text style={[styles.slotText, { color: colors.primary }]}>{booking ? t('search.bookingInProgress') : slot}</Text>
                   </Pressable>
                 ))}
               </View>

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -13,6 +14,7 @@ type Role = 'user' | 'barber';
 
 export default function PhotoPermissionScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useAppColors();
   const params = useLocalSearchParams<{ role?: string }>();
   const role: Role = params.role === 'barber' ? 'barber' : 'user';
@@ -25,7 +27,7 @@ export default function PhotoPermissionScreen() {
     try {
       const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!result.granted && result.canAskAgain === false) {
-        Alert.alert('Permission Blocked', 'You can enable photo permission later in Settings.');
+        Alert.alert(t('permissions.permissionBlockedTitle'), t('permissions.photoPermissionBlockedMessage'));
       }
       goNext();
     } catch {
@@ -40,17 +42,17 @@ export default function PhotoPermissionScreen() {
           <Ionicons name="images-outline" size={56} color={colors.primary} />
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>Upload your profile photo</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('permissions.photoTitle')}</Text>
         <Text style={[styles.description, { color: colors.textMuted }]}>
-          Allow access to your gallery to choose your profile picture.
+          {t('permissions.photoDescription')}
         </Text>
 
         <Pressable style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary }, pressed && styles.pressed]} onPress={handleAllow}>
-          <Text style={styles.primaryBtnText}>Allow Access</Text>
+          <Text style={styles.primaryBtnText}>{t('permissions.allowAccess')}</Text>
         </Pressable>
 
         <Pressable style={({ pressed }) => [styles.ghostBtn, { backgroundColor: colors.surface, borderColor: colors.divider }, pressed && styles.pressed]} onPress={goNext}>
-          <Text style={[styles.ghostBtnText, { color: colors.textMuted }]}>Skip</Text>
+          <Text style={[styles.ghostBtnText, { color: colors.textMuted }]}>{t('common.skip')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
